@@ -1,2 +1,2 @@
-*.json filter=lfs diff=lfs merge=lfs -text
+ferguson_map.html filter=lfs diff=lfs merge=lfs -text
 *.html filter=lfs diff=lfs merge=lfs -text
