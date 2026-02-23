@@ -1,3 +1,305 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:9983d6458aece37aa0ed8b8d377c012c547fe828c7a43e5e573e5e6502f346a7
-size 155280009
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_ec7c941fd4cd475eb2c6ef06527bf925 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+                .leaflet-popup-content-wrapper {
+                    padding: 0;
+                    border-radius: 4px;
+                }
+                .leaflet-popup-content {
+                    margin: 0;
+                }
+                .leaflet-popup-close-button {
+                    color: #fff !important;
+                    font-size: 20px !important;
+                    padding: 8px 12px !important;
+                    z-index: 1000;
+                }
+                .leaflet-popup-close-button:hover {
+                    color: #ecf0f1 !important;
+                }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+
+</head>
+<body>
+
+
+<style>
+.leaflet-control-layers{display:none!important}
+#loader{position:fixed;top:0;left:0;width:100%;height:100%;background:#2c3e50;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column}
+#loader-content{text-align:center;color:#fff}
+#loader-spinner{border:4px solid rgba(255,255,255,0.1);border-top:4px solid #3498db;border-radius:50%;width:60px;height:60px;animation:spin 1s linear infinite;margin:0 auto 20px}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+#loader-text{font-size:18px;font-weight:600;margin-bottom:10px}
+#loader-sub{font-size:14px;color:#95a5a6}
+#loader-progress{width:300px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin:20px auto 0;overflow:hidden}
+#loader-bar{height:100%;background:#3498db;width:0;transition:width 0.3s}
+.dropdown{position:fixed;top:15px;right:15px;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);z-index:9999;font-family:system-ui;width:240px}
+.dropdown-header{padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;background:#2c3e50;color:#fff;border-radius:8px;user-select:none}
+.dropdown-header:hover{background:#34495e}
+.dropdown-title{font-weight:600;font-size:14px}
+.dropdown-arrow{font-size:12px;transition:transform .2s}
+.dropdown-arrow.open{transform:rotate(180deg)}
+.dropdown-content{max-height:0;overflow:hidden;transition:max-height .3s}
+.dropdown-content.open{max-height:500px;overflow-y:auto}
+.dropdown-body{padding:12px}
+.layer-group{margin-bottom:12px}
+.layer-group:last-child{margin-bottom:0}
+.group-title{font-size:10px;font-weight:700;color:#7f8c8d;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.layer-item{padding:6px 0;cursor:pointer;font-size:13px;color:#2c3e50;display:flex;align-items:center;justify-content:space-between}
+.layer-label{flex:1}
+.layer-label:hover{color:#3498db}
+.toggle{position:relative;width:36px;height:20px;margin-left:8px}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#cbd5e0;transition:.3s;border-radius:20px}
+.slider:before{position:absolute;content:"";height:14px;width:14px;left:3px;bottom:3px;background:#fff;transition:.3s;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.toggle input:checked+.slider{background:#3498db}
+.toggle input:checked+.slider:before{transform:translateX(16px)}
+.title{position:fixed;top:15px;left:15px;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);padding:12px 16px;z-index:9998;font-family:system-ui}
+.title-main{font-size:16px;font-weight:700;color:#2c3e50}
+.title-sub{font-size:10px;color:#95a5a6;margin-top:2px}
+.legend{position:fixed;bottom:15px;left:15px;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-family:system-ui;z-index:9998;max-width:240px}
+.legend-header{background:#2c3e50;color:#fff;padding:10px 12px;border-radius:8px 8px 0 0;font-weight:600;font-size:12px}
+.legend-body{padding:10px 12px;font-size:9px;line-height:1.6}
+.legend-section{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #ecf0f1}
+.legend-section:last-child{margin-bottom:0;border:none;padding-bottom:0}
+.legend-title{font-weight:700;color:#2c3e50;margin-bottom:4px;font-size:10px}
+.legend-row{display:flex;align-items:center;margin-bottom:2px}
+.legend-color{width:12px;height:7px;border-radius:2px;margin-right:5px;flex-shrink:0}
+</style>
+
+<div id="loader">
+<div id="loader-content">
+<div id="loader-spinner"></div>
+<div id="loader-text">Loading Ferguson Housing Map</div>
+<div id="loader-sub">Preparing 8,877 parcels...</div>
+<div id="loader-progress"><div id="loader-bar"></div></div>
+</div>
+</div>
+
+<div class="title">
+<div class="title-main">Ferguson Housing Analysis</div>
+<div class="title-sub">8,877 parcels</div>
+</div>
+
+<div class="dropdown">
+<div class="dropdown-header" onclick="toggle()">
+<div class="dropdown-title">Layers</div>
+<div class="dropdown-arrow" id="arrow">▼</div>
+</div>
+<div class="dropdown-content" id="content">
+<div class="dropdown-body">
+<div class="layer-group">
+<div class="group-title">Confirmed Data</div>
+<div class="layer-item">
+<div class="layer-label" onclick="tog('confirmed')">📋 Confirmed Abandoned (138)</div>
+<label class="toggle"><input type="checkbox" id="confirmed" onchange="tog('confirmed')"><span class="slider"></span></label>
+</div>
+</div>
+<div class="layer-group">
+<div class="group-title">Predictions</div>
+<div class="layer-item">
+<div class="layer-label" onclick="tog('cv')">🤖 Computer Vision</div>
+<label class="toggle"><input type="checkbox" id="cv" onchange="tog('cv')" checked><span class="slider"></span></label>
+</div>
+<div class="layer-item">
+<div class="layer-label" onclick="tog('ensemble')">🎯 Ensemble</div>
+<label class="toggle"><input type="checkbox" id="ensemble" onchange="tog('ensemble')"><span class="slider"></span></label>
+</div>
+<div class="layer-item">
+<div class="layer-label" onclick="tog('ml')">🧠 ML Model</div>
+<label class="toggle"><input type="checkbox" id="ml" onchange="tog('ml')"><span class="slider"></span></label>
+</div>
+<div class="layer-item">
+<div class="layer-label" onclick="tog('risk')">⚠️ Risk Score</div>
+<label class="toggle"><input type="checkbox" id="risk" onchange="tog('risk')"><span class="slider"></span></label>
+</div>
+</div>
+<div class="layer-group">
+<div class="group-title">Risk Factors</div>
+<div class="layer-item">
+<div class="layer-label" onclick="tog('value')">💰 Value</div>
+<label class="toggle"><input type="checkbox" id="value" onchange="tog('value')"><span class="slider"></span></label>
+</div>
+<div class="layer-item">
+<div class="layer-label" onclick="tog('age')">🏚️ Age</div>
+<label class="toggle"><input type="checkbox" id="age" onchange="tog('age')"><span class="slider"></span></label>
+</div>
+<div class="layer-item">
+<div class="layer-label" onclick="tog('occ')">🏠 Occupancy</div>
+<label class="toggle"><input type="checkbox" id="occ" onchange="tog('occ')"><span class="slider"></span></label>
+</div>
+</div>
+<div class="layer-group">
+<div class="group-title">Priority</div>
+<div class="layer-item">
+<div class="layer-label" onclick="tog('critical')">🔴 Critical (620)</div>
+<label class="toggle"><input type="checkbox" id="critical" onchange="tog('critical')"><span class="slider"></span></label>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="legend">
+<div class="legend-header">Color Guide</div>
+<div class="legend-body">
+<div class="legend-section">
+<div class="legend-title">📋 Confirmed Abandoned</div>
+<div class="legend-row"><div class="legend-color" style="background:#8b0000"></div>Official City List (138)</div>
+</div>
+<div class="legend-section">
+<div class="legend-title">🤖 Computer Vision</div>
+<div class="legend-row"><div class="legend-color" style="background:#27ae60"></div>Occupied</div>
+<div class="legend-row"><div class="legend-color" style="background:#e74c3c"></div>Abandoned</div>
+<div class="legend-row"><div class="legend-color" style="background:#f39c12"></div>Vacant Lot</div>
+</div>
+<div class="legend-section">
+<div class="legend-title">🎯 Prediction Scores</div>
+<div class="legend-row"><div class="legend-color" style="background:#27ae60"></div>0-25 (Low)</div>
+<div class="legend-row"><div class="legend-color" style="background:#f1c40f"></div>25-50 (Med)</div>
+<div class="legend-row"><div class="legend-color" style="background:#e67e22"></div>50-75 (High)</div>
+<div class="legend-row"><div class="legend-color" style="background:#e74c3c"></div>75-100 (Crit)</div>
+</div>
+<div class="legend-section">
+<div class="legend-title">💰 Property Value</div>
+<div class="legend-row"><div class="legend-color" style="background:#e74c3c"></div>&lt;$50k (High Risk)</div>
+<div class="legend-row"><div class="legend-color" style="background:#e67e22"></div>$50-100k</div>
+<div class="legend-row"><div class="legend-color" style="background:#f1c40f"></div>$100-150k</div>
+<div class="legend-row"><div class="legend-color" style="background:#27ae60"></div>$150k+ (Low Risk)</div>
+</div>
+<div class="legend-section">
+<div class="legend-title">🏚️ Building Age</div>
+<div class="legend-row"><div class="legend-color" style="background:#27ae60"></div>0-30 yrs (New)</div>
+<div class="legend-row"><div class="legend-color" style="background:#f1c40f"></div>30-60 yrs</div>
+<div class="legend-row"><div class="legend-color" style="background:#e67e22"></div>60-90 yrs</div>
+<div class="legend-row"><div class="legend-color" style="background:#e74c3c"></div>90+ yrs (High Risk)</div>
+</div>
+<div class="legend-section">
+<div class="legend-title">🏠 Occupancy</div>
+<div class="legend-row"><div class="legend-color" style="background:#27ae60"></div>Owner (Lower Risk)</div>
+<div class="legend-row"><div class="legend-color" style="background:#e74c3c"></div>Non-Owner (Higher Risk)</div>
+</div>
+</div>
+</div>
+
+            <div class="folium-map" id="map_ec7c941fd4cd475eb2c6ef06527bf925" ></div>
+
+</body>
+<script>
+
+
+            var map_ec7c941fd4cd475eb2c6ef06527bf925 = L.map(
+                "map_ec7c941fd4cd475eb2c6ef06527bf925",
+                {
+                    center: [38.74916096270073, -90.30266995417068],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 14,
+                    zoomControl: true,
+                    preferCanvas: true,
+                    maxZoom: 18,
+                }
+            );
+
+
+
+
+
+            var tile_layer = L.tileLayer(
+                "https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png",
+                {"attribution": "\u0026copy; \u003ca target=\"_blank\" href=\"http://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca target=\"_blank\" href=\"http://cartodb.com/attributions\"\u003eCartoDB\u003c/a\u003e, CartoDB \u003ca target=\"_blank\" href =\"http://cartodb.com/attributions\"\u003eattributions\u003c/a\u003e", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            );
+
+
+
+
+            tile_layer.addTo(map_ec7c941fd4cd475eb2c6ef06527bf925);
+
+
+
+const data={};
+const layers={};
+const layerNames=['cv','ensemble','ml','risk','value','age','occ','critical','confirmed'];
+
+// Load all layer data
+async function loadData(){
+const promises=layerNames.map(async name=>{
+const response=await fetch(`map_data/${name}.json`);
+data[name]=await response.json();
+});
+await Promise.all(promises);
+document.getElementById('loader').style.display='none';
+tog('cv');
+}
+
+// Start loading data immediately
+loadData();
+const layers={};
+
+function tog(id){
+const checkbox=document.getElementById(id);
+const map=window.map_ec7c941fd4cd475eb2c6ef06527bf925;
+
+if(checkbox.checked){
+if(!layers[id]){
+layers[id]=L.geoJSON({type:'FeatureCollection',features:data[id]},{
+style:f=>({'fillColor':f.properties.c,'color':'#34495e','weight':0.3,'fillOpacity':0.7}),
+onEachFeature:(f,l)=>{if(f.properties.p)l.bindPopup(f.properties.p,{maxWidth:360})}
+});
+}
+layers[id].addTo(map);
+}else{
+if(layers[id])map.removeLayer(layers[id]);
+}
+}
+
+function toggle(){
+const content=document.getElementById('content');
+const arrow=document.getElementById('arrow');
+content.classList.toggle('open');
+arrow.classList.toggle('open');
+}
+
+
+},100);
+
+</script>
+</html>
