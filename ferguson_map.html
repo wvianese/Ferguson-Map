@@ -255,51 +255,103 @@
 
 
 
-const data={};
-const layers={};
-const layerNames=['cv','ensemble','ml','risk','value','age','occ','critical','confirmed'];
+const data = {};
+const layers = {};
+const layerNames = ['cv', 'ensemble', 'ml', 'risk', 'value', 'age', 'occ', 'critical', 'confirmed'];
+const loadingLayers = {};
 
-// Load all layer data
-async function loadData(){
-const promises=layerNames.map(async name=>{
-const response=await fetch(`map_data/${name}.json`);
-data[name]=await response.json();
-});
-await Promise.all(promises);
-document.getElementById('loader').style.display='none';
-tog('cv');
+function updateProgress(done, total, label){
+  const pct = Math.max(0, Math.min(100, Math.round((done / total) * 100)));
+  const bar = document.getElementById('loader-bar');
+  const sub = document.getElementById('loader-sub');
+  if (bar) bar.style.width = pct + '%';
+  if (sub && label) sub.textContent = label;
 }
 
-// Start loading data immediately
-loadData();
-const layers={};
+async function loadLayer(name){
+  if (data[name]) return data[name];
+  if (loadingLayers[name]) return loadingLayers[name];
 
-function tog(id){
-const checkbox=document.getElementById(id);
-const map=window.map_ec7c941fd4cd475eb2c6ef06527bf925;
+  loadingLayers[name] = (async () => {
+    const response = await fetch(`map_data/${name}.json`, { cache: 'force-cache' });
+    if (!response.ok) {
+      throw new Error(`Failed to load ${name}.json (${response.status})`);
+    }
+    const json = await response.json();
+    data[name] = json;
+    return json;
+  })();
 
-if(checkbox.checked){
-if(!layers[id]){
-layers[id]=L.geoJSON({type:'FeatureCollection',features:data[id]},{
-style:f=>({'fillColor':f.properties.c,'color':'#34495e','weight':0.3,'fillOpacity':0.7}),
-onEachFeature:(f,l)=>{if(f.properties.p)l.bindPopup(f.properties.p,{maxWidth:360})}
-});
+  try {
+    return await loadingLayers[name];
+  } finally {
+    delete loadingLayers[name];
+  }
 }
-layers[id].addTo(map);
-}else{
-if(layers[id])map.removeLayer(layers[id]);
+
+function buildLayer(id){
+  if (layers[id]) return layers[id];
+  layers[id] = L.geoJSON({ type: 'FeatureCollection', features: data[id] || [] }, {
+    style: f => ({ fillColor: f.properties.c, color: '#34495e', weight: 0.3, fillOpacity: 0.7 }),
+    onEachFeature: (f, l) => { if (f.properties.p) l.bindPopup(f.properties.p, { maxWidth: 360 }); }
+  });
+  return layers[id];
 }
+
+async function tog(id){
+  const checkbox = document.getElementById(id);
+  const map = window.map_ec7c941fd4cd475eb2c6ef06527bf925;
+  if (!checkbox) return;
+
+  if (checkbox.checked) {
+    if (!data[id]) {
+      try {
+        await loadLayer(id);
+      } catch (err) {
+        checkbox.checked = false;
+        console.error(err);
+        return;
+      }
+    }
+    buildLayer(id).addTo(map);
+  } else if (layers[id]) {
+    map.removeLayer(layers[id]);
+  }
 }
 
 function toggle(){
-const content=document.getElementById('content');
-const arrow=document.getElementById('arrow');
-content.classList.toggle('open');
-arrow.classList.toggle('open');
+  const content = document.getElementById('content');
+  const arrow = document.getElementById('arrow');
+  content.classList.toggle('open');
+  arrow.classList.toggle('open');
 }
 
+async function startLoading(){
+  try {
+    updateProgress(0, layerNames.length, 'Loading core layer...');
+    await loadLayer('cv');
+    updateProgress(1, layerNames.length, 'Preparing map...');
+    document.getElementById('loader').style.display = 'none';
+    tog('cv');
 
-},100);
+    let done = 1;
+    const remaining = layerNames.filter(n => n !== 'cv');
+    for (const name of remaining) {
+      loadLayer(name)
+        .then(() => {
+          done += 1;
+          updateProgress(done, layerNames.length, `Loaded ${done}/${layerNames.length} layers`);
+        })
+        .catch(err => console.error(err));
+    }
+  } catch (err) {
+    console.error(err);
+    const sub = document.getElementById('loader-sub');
+    if (sub) sub.textContent = 'Failed to load map data. Please refresh.';
+  }
+}
+
+startLoading();
 
 </script>
 </html>
