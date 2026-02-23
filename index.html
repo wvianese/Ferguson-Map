@@ -1,3 +1,66 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:bd8a52b909a15a0bc2ba92205e06c183de887d5d6bdd430879951edb197b3c1a
-size 1879
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ferguson Housing Analysis - Interactive Map</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #2c3e50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            text-align: center;
+            color: white;
+            padding: 40px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            color: #ecf0f1;
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .info {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            font-size: 0.9em;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ferguson Housing Analysis</h1>
+        <p>Interactive risk assessment map • 8,877 parcels analyzed</p>
+        <a href="ferguson_map.html" class="btn">View Interactive Map →</a>
+        <div class="info">
+            Comprehensive analysis combining computer vision, machine learning,<br>
+            and statistical modeling to identify housing abandonment risk.
+        </div>
+    </div>
+</body>
+</html>
