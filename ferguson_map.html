@@ -334,7 +334,7 @@ updateProgress(0,layerNames.length,'Loading core layer...');
 await loadLayer('ensemble');
 updateProgress(1,layerNames.length,'Preparing map...');
 document.getElementById('loader').style.display='none';
-tog('ensemble');
+await tog('ensemble');
 loadRemainingInBackground();
 }catch(err){
 console.error(err);
@@ -372,6 +372,21 @@ if(layers[id])map.removeLayer(layers[id]);
 }
 }
 
+function collectLayerMatches(layerGroup,input){
+const matches=[];
+if(!layerGroup)return matches;
+layerGroup.eachLayer(l=>{
+const props=l.feature.properties;
+if(props.t){
+const address=props.t.toLowerCase();
+if(address.includes(input)){
+matches.push({address:props.t,layer:l,color:props.c});
+}
+}
+});
+return matches;
+}
+
 function toggle(){
 const content=document.getElementById('content');
 const arrow=document.getElementById('arrow');
@@ -392,7 +407,7 @@ arrow.classList.toggle('collapsed');
 
 let searchResultsData=[];
 
-function searchAddress(event){
+async function searchAddress(event){
 const input=document.getElementById('searchInput').value.toLowerCase().trim();
 const resultsDiv=document.getElementById('searchResults');
 if(!input){
@@ -406,20 +421,37 @@ return;
 searchResultsData=[];
 Object.keys(layers).forEach(layerId=>{
 if(layers[layerId]){
-layers[layerId].eachLayer(l=>{
-const props=l.feature.properties;
-if(props.t){
-const address=props.t.toLowerCase();
-if(address.includes(input)){
-const existing=searchResultsData.find(r=>r.address===props.t);
-if(!existing){
-searchResultsData.push({address:props.t,layer:l,color:props.c});
-}
-}
-}
+collectLayerMatches(layers[layerId],input).forEach(r=>{
+const existing=searchResultsData.find(x=>x.address===r.address);
+if(!existing)searchResultsData.push(r);
 });
 }
 });
+
+// Fallback: ensure ensemble data is searchable even if other layers are not yet initialized.
+if(searchResultsData.length===0){
+if(!data.ensemble){
+try{
+await loadLayer('ensemble');
+}catch(err){
+console.error(err);
+}
+}
+if(data.ensemble&&!layers.ensemble){
+layers.ensemble=L.geoJSON({type:'FeatureCollection',features:data.ensemble},{
+style:f=>({'fillColor':f.properties.c,'color':'#34495e','weight':0.3,'fillOpacity':0.7}),
+onEachFeature:(f,l)=>{
+if(f.properties.p)l.bindPopup(f.properties.p,{maxWidth:360});
+if(f.properties.t)l.bindTooltip(f.properties.t,{sticky:true});
+}
+});
+}
+collectLayerMatches(layers.ensemble,input).forEach(r=>{
+const existing=searchResultsData.find(x=>x.address===r.address);
+if(!existing)searchResultsData.push(r);
+});
+}
+
 searchResultsData.sort((a,b)=>a.address.localeCompare(b.address));
 searchResultsData=searchResultsData.slice(0,10);
 if(searchResultsData.length>0){
