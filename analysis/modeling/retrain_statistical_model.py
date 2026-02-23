@@ -409,8 +409,8 @@ def build_feature_matrix(rows: List[Dict[str, str]]) -> Tuple[Dict[str, List[flo
 
     y: List[int] = [1 if parse_binary(r.get('is_abandoned')) == 1.0 else 0 for r in rows]
 
-    # Restrict to pre-outcome property characteristics to avoid leakage.
-    # These are interpretable and align with inspection-time parcel attributes.
+    # Candidate feature pool from currently available production attributes.
+    # Final inclusion is decided by CV gain + collinearity checks.
     candidates: Dict[str, List[float]] = {
         'building_age': [],
         'log_property_value': [],

@@ -210,7 +210,7 @@ From `ferguson_map.html`:
 
 - Loads `ensemble` layer first for fastest perceived startup
 - Streams remaining layers in background (`fetch('map_data/<layer>.json')`)
-- Uses `cache: 'force-cache'` for layer fetches
+- Uses `cache: 'no-store'` for layer fetches to avoid stale local JSON during active iteration
 - Search can operate even before all layers are loaded (fallback against ensemble index)
 - Layer controls are custom (not Leaflet default), with `Layers` open by default
 - Popups include:
@@ -308,6 +308,12 @@ AI image model (`cv_score >= 50`):
 - Confusion counts: `TP=89, TN=7622, FP=1114, FN=49`
 - Recall on confirmed abandoned: `64.49%`
 
+Combined model (`ensemble_score >= 50`):
+
+- Accuracy: `95.39%` (`8468 / 8877`)
+- Confusion counts: `TP=126, TN=8342, FP=397, FN=12`
+- Recall on confirmed abandoned: `91.30%`
+
 Notes for rigorous interpretation:
 
 - Dataset is highly imbalanced (138 positives vs 8,739 negatives), so accuracy alone can look high.
@@ -359,5 +365,5 @@ def eval_acc(score_col):
 ## Current Project Status (as of February 23, 2026)
 
 - Regression refresh committed and pushed to `main`
-- Model/report files reflect leakage-safe feature set and CV-selected regularization
-- UI includes confidence subsection in popups and functional address search
+- Model/report files reflect CV-selected feature set and CV-selected regularization
+- UI includes confidence subsection in popups, functional address search, and occupancy colors with neutral renter styling
