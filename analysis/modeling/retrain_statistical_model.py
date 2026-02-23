@@ -50,11 +50,13 @@ def clamp(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
 
 
 def color_score_0_100(score: float) -> str:
-    if score < 25:
+    # Match displayed one-decimal score so color buckets align with what users see.
+    s = round(score, 1)
+    if s < 25:
         return '#27ae60'
-    if score < 50:
+    if s < 50:
         return '#f1c40f'
-    if score < 75:
+    if s < 75:
         return '#e67e22'
     return '#e74c3c'
 
@@ -353,7 +355,7 @@ def extract_address_from_popup(popup_html: str) -> str:
 
 
 def update_map_layers(addr_index: Dict[str, Dict[str, float]]) -> None:
-    combined_re = re.compile(r"(<tr><td><b>Combined Score:</b></td><td style='text-align:right'><b style='color:)(#[0-9a-fA-F]{6})(\">)([0-9]+(?:\.[0-9]+)?)(</b>/100</td></tr>)")
+    combined_re = re.compile(r"(<tr><td><b>Combined Score:</b></td><td style='text-align:right'><b style='color:)(#[0-9a-fA-F]{6})('>)([0-9]+(?:\.[0-9]+)?)(</b>/100</td></tr>)")
     ml_re = re.compile(r"(<tr><td>Statistical Model:</td><td style='text-align:right'>)([0-9]+(?:\.[0-9]+)?)(/100</td></tr>)")
     tooltip_color_re = re.compile(r"(background:)(#[0-9a-fA-F]{6})")
 
