@@ -232,13 +232,20 @@
 <div class="legend-row"><div class="legend-color" style="background:#8b0000"></div>Official City List (138)</div>
 </div>
 <div class="legend-section">
+<div class="legend-title">Statistical Model</div>
+<div class="legend-row"><div class="legend-color" style="background:#27ae60"></div>0-25 (Low)</div>
+<div class="legend-row"><div class="legend-color" style="background:#f1c40f"></div>25-50 (Med)</div>
+<div class="legend-row"><div class="legend-color" style="background:#e67e22"></div>50-75 (High)</div>
+<div class="legend-row"><div class="legend-color" style="background:#e74c3c"></div>75-100 (Crit)</div>
+</div>
+<div class="legend-section">
 <div class="legend-title">AI Image Analysis</div>
 <div class="legend-row"><div class="legend-color" style="background:#27ae60"></div>Occupied</div>
 <div class="legend-row"><div class="legend-color" style="background:#e74c3c"></div>Abandoned</div>
 <div class="legend-row"><div class="legend-color" style="background:#f39c12"></div>Vacant Lot</div>
 </div>
 <div class="legend-section">
-<div class="legend-title">Prediction Scores</div>
+<div class="legend-title">Combined Score</div>
 <div class="legend-row"><div class="legend-color" style="background:#27ae60"></div>0-25 (Low)</div>
 <div class="legend-row"><div class="legend-color" style="background:#f1c40f"></div>25-50 (Med)</div>
 <div class="legend-row"><div class="legend-color" style="background:#e67e22"></div>50-75 (High)</div>
@@ -303,7 +310,7 @@
 
 const data={};
 const layers={};
-const layerNames=['cv','ensemble','ml','risk','value','age','occ','critical','confirmed'];
+const layerNames=['ml','cv','ensemble','risk','value','age','occ','critical','confirmed'];
 const loadingLayers={};
 const ensembleSearchEntries=[];
 const ensembleLayerByAddress={};
