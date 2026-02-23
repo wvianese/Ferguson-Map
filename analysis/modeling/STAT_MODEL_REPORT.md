@@ -5,6 +5,8 @@ Method: class-weighted L2 logistic regression, Newton-Raphson optimization, stra
 Rows: 8877, positives (abandoned): 138, negatives: 8739
 
 Feature screening diagnostics (corr with is_abandoned):
+- is_city_owned: +0.6861
+- is_government_owned: +0.5927
 - log_improvement_value: -0.3446
 - log_square_feet: -0.2762
 - log_property_value: -0.2372
@@ -14,67 +16,59 @@ Feature screening diagnostics (corr with is_abandoned):
 - building_age: +0.0007
 
 Selected model features:
-- selected_set: baseline_core
-- building_age
-- log_property_value
-- log_square_feet
-- is_owner_occupied
+- is_city_owned (corr=+0.6861)
+- log_improvement_value (corr=-0.3446)
 
-Feature-set CV comparison (selected by highest AUC, tie-break lower Brier):
-- baseline_core: auc=0.9250, brier=0.0958, l2=1.0, n_features=4
-- add_value_per_sqft: auc=0.9250, brier=0.0958, l2=1.0, n_features=5
-- economic_full: auc=0.9241, brier=0.0895, l2=0.001, n_features=7
-- add_improvement: auc=0.9238, brier=0.0910, l2=1.0, n_features=5
-- add_land: auc=0.9190, brier=0.0938, l2=1.0, n_features=5
+Forward feature selection path (CV-gain based):
+- step 1: add is_city_owned, auc=0.9293, brier=0.0257, l2=1.0, n_features=1
+- step 2: add log_improvement_value, auc=0.9723, brier=0.0314, l2=1.0, n_features=2
 
 Model coefficients (standardized feature scale):
-- intercept: -1.578096
-- log_property_value: -0.832473 (odds ratio per +1 SD = 0.435)
-- is_owner_occupied: -0.654910 (odds ratio per +1 SD = 0.519)
-- log_square_feet: -0.647065 (odds ratio per +1 SD = 0.524)
-- building_age: +0.503916 (odds ratio per +1 SD = 1.655)
+- intercept: -2.297947
+- is_city_owned: +0.839431 (odds ratio per +1 SD = 2.315)
+- log_improvement_value: -0.722102 (odds ratio per +1 SD = 0.486)
 
 CV regularization search (mean AUC, mean Brier):
-- l2=0.0: auc=0.9250, brier=0.0958
-- l2=0.0001: auc=0.9250, brier=0.0958
-- l2=0.001: auc=0.9250, brier=0.0958
-- l2=0.01: auc=0.9250, brier=0.0958
-- l2=0.05: auc=0.9250, brier=0.0958
-- l2=0.1: auc=0.9250, brier=0.0958
-- l2=0.5: auc=0.9250, brier=0.0958
-- l2=1.0: auc=0.9250, brier=0.0958
+- l2=0.0: auc=0.9723, brier=0.0314
+- l2=0.0001: auc=0.9723, brier=0.0314
+- l2=0.001: auc=0.9723, brier=0.0314
+- l2=0.01: auc=0.9723, brier=0.0314
+- l2=0.05: auc=0.9723, brier=0.0314
+- l2=0.1: auc=0.9723, brier=0.0314
+- l2=0.5: auc=0.9723, brier=0.0314
+- l2=1.0: auc=0.9723, brier=0.0314
 
 Selected l2: 1.0
 OOF blend search (AUC for ML-vs-CV blend alpha):
 - alpha=0.00: auc=0.8230
-- alpha=0.05: auc=0.8808
-- alpha=0.10: auc=0.8904
-- alpha=0.15: auc=0.8961
-- alpha=0.20: auc=0.8994
-- alpha=0.25: auc=0.9026
-- alpha=0.30: auc=0.9089
-- alpha=0.35: auc=0.9171
-- alpha=0.40: auc=0.9262
-- alpha=0.45: auc=0.9320
-- alpha=0.50: auc=0.9345
-- alpha=0.55: auc=0.9352
-- alpha=0.60: auc=0.9358
-- alpha=0.65: auc=0.9358
-- alpha=0.70: auc=0.9351
-- alpha=0.75: auc=0.9336
-- alpha=0.80: auc=0.9321
-- alpha=0.85: auc=0.9304
-- alpha=0.90: auc=0.9280
-- alpha=0.95: auc=0.9244
-- alpha=1.00: auc=0.9207
-Selected blend alpha (ML weight): 0.65
+- alpha=0.05: auc=0.8958
+- alpha=0.10: auc=0.9112
+- alpha=0.15: auc=0.9210
+- alpha=0.20: auc=0.9263
+- alpha=0.25: auc=0.9323
+- alpha=0.30: auc=0.9433
+- alpha=0.35: auc=0.9519
+- alpha=0.40: auc=0.9637
+- alpha=0.45: auc=0.9654
+- alpha=0.50: auc=0.9669
+- alpha=0.55: auc=0.9694
+- alpha=0.60: auc=0.9720
+- alpha=0.65: auc=0.9721
+- alpha=0.70: auc=0.9722
+- alpha=0.75: auc=0.9721
+- alpha=0.80: auc=0.9721
+- alpha=0.85: auc=0.9721
+- alpha=0.90: auc=0.9721
+- alpha=0.95: auc=0.9716
+- alpha=1.00: auc=0.9637
+Selected blend alpha (ML weight): 0.70
 
 Full-data diagnostic metrics (reference only, not holdout):
-- ML AUC: 0.9262
-- ML Brier: 0.0954
-- Ensemble AUC: 0.9387
-- Ensemble Brier: 0.0696
+- ML AUC: 0.9721
+- ML Brier: 0.0313
+- Ensemble AUC: 0.9751
+- Ensemble Brier: 0.0316
 
 Score distributions:
-- ml_score min/max/mean: 0.347/99.987/22.109
-- ensemble_score min/max/mean: 0.226/85.681/19.254
+- ml_score min/max/mean: 1.607/99.637/11.568
+- ensemble_score min/max/mean: 1.125/87.741/12.283

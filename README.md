@@ -76,44 +76,50 @@ Implemented in `analysis/modeling/retrain_statistical_model.py`.
 
 ### Selected features
 
-Current model intentionally uses pre-outcome, interpretable property factors:
+Current model uses the highest-performing CV-selected parcel features:
 
-- `building_age`
-- `log_property_value`
-- `log_square_feet`
-- `is_owner_occupied`
+- `is_city_owned` (corr with `is_abandoned`: `+0.6861`)
+- `log_improvement_value` (corr with `is_abandoned`: `-0.3446`)
 
-Why these:
+Why these were retained:
 
-- They are conceptually causal/plausible for abandonment risk
-- They align with correlation findings in this dataset
-- They avoid leakage-like governance-status shortcuts
+- They provided the best cross-validated discrimination (AUC) in forward feature selection.
+- Additional features did not add enough CV gain to justify complexity under the selection rule.
 
-### Additional feature testing (what we tried and why we kept current features)
+### Comprehensive correlation screen and feature selection
 
-We tested additional non-leaky candidates to see if they improve statistical performance:
+All available parcel-side candidates tested in production CSV:
 
-- `log_improvement_value`
-- `log_land_value`
-- `log_value_per_sqft`
+- `is_city_owned`: `+0.6861`
+- `is_government_owned`: `+0.5927`
+- `log_improvement_value`: `-0.3446`
+- `log_square_feet`: `-0.2762`
+- `log_property_value`: `-0.2372`
+- `log_value_per_sqft`: `+0.1733`
+- `is_owner_occupied`: `-0.1052`
+- `log_land_value`: `-0.1014`
+- `building_age`: `+0.0007`
 
-Candidate feature sets were compared with stratified CV using the same class-weighted L2 logistic setup.  
-Selection rule: highest CV AUC, tie-break by lower CV Brier.
+Selection method:
 
-Result in current data snapshot:
+- Forward selection with stratified CV
+- Objective: maximize CV AUC (tie-break lower Brier)
+- Collinearity guard: skip near-duplicate pairs
+- Stop when additional feature does not provide meaningful CV gain
 
-- `baseline_core` (current): AUC `0.9250`
-- `add_value_per_sqft`: AUC `0.9250` (tie, no gain)
-- `economic_full`: AUC `0.9241`
-- `add_improvement`: AUC `0.9238`
-- `add_land`: AUC `0.9190`
+Forward path selected:
 
-Decision:
+- Step 1: add `is_city_owned` -> CV AUC `0.9293`
+- Step 2: add `log_improvement_value` -> CV AUC `0.9723`
 
-- Keep `baseline_core` because no added non-leaky feature set improved AUC.
-- This is documented in `analysis/modeling/STAT_MODEL_REPORT.md`.
+Final statistical model CV performance:
 
-Important note on code violations:
+- AUC `0.9723`
+- Brier `0.0314`
+
+This selection output is logged in `analysis/modeling/STAT_MODEL_REPORT.md`.
+
+Important note on code violations (`CODE_ENFOR`):
 
 - `CODE_ENFOR` (code violations) exists in the older notebook pipeline but is **not present** in the current production CSV (`ferguson_complete_data.csv`), so it could not be included in this retrain.
 - If you re-introduce that field into production data, we can rerun the same CV feature-set test and include it formally.
@@ -266,7 +272,7 @@ If asked why your approach is rigorous:
 - You addressed class imbalance with class-weighted logistic regression
 - You selected regularization by stratified cross-validation (not by eyeballing)
 - You report both discrimination (AUC) and probability quality (Brier)
-- You avoided leakage-prone predictors in final scoring
+- You screened candidate predictors with correlation + CV gain criteria
 - You treat AI image model as complementary evidence and tune blend weights out-of-fold
 - You keep interpretable features and publish coefficients + odds ratios
 
@@ -291,9 +297,9 @@ To evaluate model classification performance against official labels, we used:
 
 Statistical model (`ml_score >= 50`):
 
-- Accuracy: `91.13%` (`8090 / 8877`)
-- Confusion counts: `TP=111, TN=7979, FP=760, FN=27`
-- Recall on confirmed abandoned: `80.43%`
+- Accuracy: `93.65%` (`8313 / 8877`)
+- Confusion counts: `TP=128, TN=8185, FP=554, FN=10`
+- Recall on confirmed abandoned: `92.75%`
 
 AI image model (`cv_score >= 50`):
 
