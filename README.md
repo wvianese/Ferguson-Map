@@ -89,6 +89,35 @@ Why these:
 - They align with correlation findings in this dataset
 - They avoid leakage-like governance-status shortcuts
 
+### Additional feature testing (what we tried and why we kept current features)
+
+We tested additional non-leaky candidates to see if they improve statistical performance:
+
+- `log_improvement_value`
+- `log_land_value`
+- `log_value_per_sqft`
+
+Candidate feature sets were compared with stratified CV using the same class-weighted L2 logistic setup.  
+Selection rule: highest CV AUC, tie-break by lower CV Brier.
+
+Result in current data snapshot:
+
+- `baseline_core` (current): AUC `0.9250`
+- `add_value_per_sqft`: AUC `0.9250` (tie, no gain)
+- `economic_full`: AUC `0.9241`
+- `add_improvement`: AUC `0.9238`
+- `add_land`: AUC `0.9190`
+
+Decision:
+
+- Keep `baseline_core` because no added non-leaky feature set improved AUC.
+- This is documented in `analysis/modeling/STAT_MODEL_REPORT.md`.
+
+Important note on code violations:
+
+- `CODE_ENFOR` (code violations) exists in the older notebook pipeline but is **not present** in the current production CSV (`ferguson_complete_data.csv`), so it could not be included in this retrain.
+- If you re-introduce that field into production data, we can rerun the same CV feature-set test and include it formally.
+
 ### Preprocessing
 
 - Numeric coercion with median imputation for missing values

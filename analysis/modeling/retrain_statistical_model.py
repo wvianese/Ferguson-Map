@@ -394,7 +394,7 @@ def update_map_layers(addr_index: Dict[str, Dict[str, float]]) -> None:
         print(f'{layer_name}: updated {changed} features')
 
 
-def build_feature_matrix(rows: List[Dict[str, str]]) -> Tuple[List[List[float]], List[int], List[float], List[str], Dict[str, float], Dict[str, float]]:
+def build_feature_matrix(rows: List[Dict[str, str]]) -> Tuple[Dict[str, List[float]], List[int], List[float], Dict[str, float], Dict[str, float]]:
     cont_cols = ['building_age', 'property_value', 'improvement_value', 'land_value', 'square_feet', 'value_per_sqft']
     med: Dict[str, float] = {}
 
@@ -412,7 +412,10 @@ def build_feature_matrix(rows: List[Dict[str, str]]) -> Tuple[List[List[float]],
     candidates: Dict[str, List[float]] = {
         'building_age': [],
         'log_property_value': [],
+        'log_improvement_value': [],
+        'log_land_value': [],
         'log_square_feet': [],
+        'log_value_per_sqft': [],
         'is_owner_occupied': [],
     }
 
@@ -439,27 +442,69 @@ def build_feature_matrix(rows: List[Dict[str, str]]) -> Tuple[List[List[float]],
 
         candidates['building_age'].append(age)
         candidates['log_property_value'].append(math.log1p(max(pv, 0.0)))
+        candidates['log_improvement_value'].append(math.log1p(max(iv, 0.0)))
+        candidates['log_land_value'].append(math.log1p(max(lv, 0.0)))
         candidates['log_square_feet'].append(math.log1p(max(sf, 0.0)))
+        candidates['log_value_per_sqft'].append(math.log1p(max(vpsf, 0.0)))
         candidates['is_owner_occupied'].append(parse_binary(r.get('is_owner_occupied')))
 
     y_float = [float(v) for v in y]
     target_corr = {name: corr(vals, y_float) for name, vals in candidates.items()}
 
-    # Core model used in final scoring.
     selected = ['building_age', 'log_property_value', 'log_square_feet', 'is_owner_occupied']
     inter_corr_kept: Dict[str, float] = {}
     for i, a in enumerate(selected):
         for b in selected[i + 1:]:
             inter_corr_kept[f'{a}~{b}'] = corr(candidates[a], candidates[b])
 
-    X: List[List[float]] = []
     cv_prob: List[float] = []
-    for i, r in enumerate(rows):
-        X.append([candidates[f][i] for f in selected])
+    for r in rows:
         cv = to_float(r.get('cv_score'))
         cv_prob.append(math.nan if math.isnan(cv) else cv / 100.0)
 
-    return X, y, cv_prob, selected, target_corr, inter_corr_kept
+    return candidates, y, cv_prob, target_corr, inter_corr_kept
+
+
+def evaluate_feature_sets(
+    candidates: Dict[str, List[float]],
+    y: List[int],
+    l2_grid: Sequence[float],
+) -> Tuple[str, List[str], List[List[float]], float, Dict[float, Tuple[float, float]], Dict[str, Dict[str, float]]]:
+    """Compare defensible pre-outcome feature sets and choose best by CV AUC/Brier."""
+    feature_sets: Dict[str, List[str]] = {
+        'baseline_core': ['building_age', 'log_property_value', 'log_square_feet', 'is_owner_occupied'],
+        'add_improvement': ['building_age', 'log_property_value', 'log_square_feet', 'is_owner_occupied', 'log_improvement_value'],
+        'add_land': ['building_age', 'log_property_value', 'log_square_feet', 'is_owner_occupied', 'log_land_value'],
+        'add_value_per_sqft': ['building_age', 'log_property_value', 'log_square_feet', 'is_owner_occupied', 'log_value_per_sqft'],
+        'economic_full': ['building_age', 'log_property_value', 'log_improvement_value', 'log_land_value', 'log_square_feet', 'log_value_per_sqft', 'is_owner_occupied'],
+    }
+
+    comparison: Dict[str, Dict[str, float]] = {}
+    chosen_name = 'baseline_core'
+    chosen_features = feature_sets[chosen_name]
+    chosen_l2 = 1.0
+    chosen_summary: Dict[float, Tuple[float, float]] = {}
+
+    for name, feats in feature_sets.items():
+        X = [[candidates[f][i] for f in feats] for i in range(len(y))]
+        best_l2, summary = select_l2_via_cv(X, y, l2_grid=l2_grid, k=4)
+        auc, br = summary[best_l2]
+        comparison[name] = {'auc': auc, 'brier': br, 'l2': best_l2, 'n_features': float(len(feats))}
+
+        # Higher AUC wins; Brier breaks ties.
+        current = comparison[chosen_name]
+        if (auc > current['auc'] + 1e-9) or (abs(auc - current['auc']) <= 1e-9 and br < current['brier']):
+            chosen_name = name
+            chosen_features = feats
+            chosen_l2 = best_l2
+            chosen_summary = summary
+        elif name == 'baseline_core' and not chosen_summary:
+            # initialize from first loop
+            chosen_l2 = best_l2
+            chosen_summary = summary
+
+    X_final = [[candidates[f][i] for f in chosen_features] for i in range(len(y))]
+    return chosen_name, chosen_features, X_final, chosen_l2, chosen_summary, comparison
 
 
 def main() -> None:
@@ -470,11 +515,11 @@ def main() -> None:
         for row in r:
             rows.append(row)
 
-    X, y, cv_prob, selected_features, target_corr, inter_corr = build_feature_matrix(rows)
+    candidates, y, cv_prob, target_corr, inter_corr = build_feature_matrix(rows)
 
     # Candidate regularization strengths for CV model selection.
     l2_grid = [0.0, 1e-4, 1e-3, 1e-2, 5e-2, 1e-1, 5e-1, 1.0]
-    best_l2, cv_summary = select_l2_via_cv(X, y, l2_grid=l2_grid, k=4)
+    selected_set_name, selected_features, X, best_l2, cv_summary, feature_set_comparison = evaluate_feature_sets(candidates, y, l2_grid=l2_grid)
     best_alpha, alpha_scores = choose_blend_alpha_oof(X, y, cv_prob=cv_prob, l2=best_l2, k=4)
 
     model = fit_logistic_regression(X, y, l2=best_l2)
@@ -546,8 +591,13 @@ def main() -> None:
         lines.append(f'- {name}: {c:+.4f}')
     lines.append('')
     lines.append('Selected model features:')
+    lines.append(f'- selected_set: {selected_set_name}')
     for f in selected_features:
         lines.append(f'- {f}')
+    lines.append('')
+    lines.append('Feature-set CV comparison (selected by highest AUC, tie-break lower Brier):')
+    for name, stats in sorted(feature_set_comparison.items(), key=lambda kv: (-kv[1]['auc'], kv[1]['brier'])):
+        lines.append(f"- {name}: auc={stats['auc']:.4f}, brier={stats['brier']:.4f}, l2={stats['l2']}, n_features={int(stats['n_features'])}")
     lines.append('')
     lines.append('Model coefficients (standardized feature scale):')
     lines.append(f'- intercept: {model.bias:+.6f}')
