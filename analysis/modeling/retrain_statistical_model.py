@@ -252,6 +252,7 @@ def fit_logistic_regression(
             hess[j][j] += 2.0 * l2
 
         try:
+            # Newton step solves H * delta = grad, then beta <- beta + delta.
             delta = solve_linear_system(hess, grad)
         except ValueError:
             break
@@ -309,7 +310,8 @@ def select_l2_via_cv(X: List[List[float]], y: List[int], l2_grid: Sequence[float
 
         summary[l2] = (sum(aucs) / len(aucs), sum(briers) / len(briers))
 
-    # One-standard-error style robustness: accept small AUC loss for more regularization.
+    # Robustness rule: allow tiny AUC drop, then prefer stronger regularization.
+    # This avoids fragile near-unregularized coefficients when CV differences are negligible.
     best_auc = max(v[0] for v in summary.values())
     eligible = [(l2, auc, br) for l2, (auc, br) in summary.items() if auc >= best_auc - 0.002]
     best = sorted(eligible, key=lambda t: (-t[0], t[2]))[0][0]
@@ -330,6 +332,7 @@ def choose_blend_alpha_oof(X: List[List[float]], y: List[int], cv_prob: List[flo
             oof_ml[idx] = prob
 
     alpha_scores: Dict[float, float] = {}
+    # Grid-search blend from pure CV (0.0) to pure ML (1.0) using OOF predictions.
     for step in range(0, 21):
         a = step / 20.0
         comb = []
@@ -399,11 +402,13 @@ def build_feature_matrix(rows: List[Dict[str, str]]) -> Tuple[List[List[float]],
         vals = [to_float(r.get(c)) for r in rows]
         vals = [v for v in vals if not math.isnan(v)]
         vals.sort()
+        # Median imputation is robust to heavy right-skew in tax/value fields.
         med[c] = vals[len(vals) // 2] if vals else 0.0
 
     y: List[int] = [1 if parse_binary(r.get('is_abandoned')) == 1.0 else 0 for r in rows]
 
-    # Restrict to pre-outcome property characteristics to avoid target leakage.
+    # Restrict to pre-outcome property characteristics to avoid leakage.
+    # These are interpretable and align with inspection-time parcel attributes.
     candidates: Dict[str, List[float]] = {
         'building_age': [],
         'log_property_value': [],
@@ -440,7 +445,7 @@ def build_feature_matrix(rows: List[Dict[str, str]]) -> Tuple[List[List[float]],
     y_float = [float(v) for v in y]
     target_corr = {name: corr(vals, y_float) for name, vals in candidates.items()}
 
-    # Core model: age + value + size + owner occupancy.
+    # Core model used in final scoring.
     selected = ['building_age', 'log_property_value', 'log_square_feet', 'is_owner_occupied']
     inter_corr_kept: Dict[str, float] = {}
     for i, a in enumerate(selected):
@@ -467,6 +472,7 @@ def main() -> None:
 
     X, y, cv_prob, selected_features, target_corr, inter_corr = build_feature_matrix(rows)
 
+    # Candidate regularization strengths for CV model selection.
     l2_grid = [0.0, 1e-4, 1e-3, 1e-2, 5e-2, 1e-1, 5e-1, 1.0]
     best_l2, cv_summary = select_l2_via_cv(X, y, l2_grid=l2_grid, k=4)
     best_alpha, alpha_scores = choose_blend_alpha_oof(X, y, cv_prob=cv_prob, l2=best_l2, k=4)
@@ -474,7 +480,7 @@ def main() -> None:
     model = fit_logistic_regression(X, y, l2=best_l2)
     ml_prob = model.predict_proba(X)
 
-    # Coefficients on standardized features are directly comparable magnitudes.
+    # Standardization makes coefficient magnitudes comparable across features.
     coef_by_feature = {f: w for f, w in zip(selected_features, model.weights)}
 
     addr_index: Dict[str, Dict[str, float]] = {}
@@ -492,7 +498,7 @@ def main() -> None:
         if math.isnan(occ_r):
             occ_r = 0.0 if parse_binary(row.get('is_owner_occupied')) == 1.0 else 100.0
 
-        # Keep existing risk framework, but fed with re-estimated ensemble probability.
+        # Preserve the map's existing risk framework while refreshing model inputs.
         prisk = clamp(0.40 * ens + 0.20 * age_r + 0.25 * val_r + 0.15 * occ_r)
 
         row['ml_score'] = f'{ml:.6f}'

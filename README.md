@@ -246,6 +246,61 @@ If asked why probabilities are not uniformly 0-100:
 - Real calibrated probabilities reflect data prevalence and separability
 - For rare events, most cases should cluster low; forcing artificial spread is statistically misleading
 
+## 10.1) Validation Against Confirmed Abandoned List
+
+To evaluate model classification performance against official labels, we used:
+
+- Ground truth: `is_abandoned` (from Ferguson confirmed restoration list join)
+- Positive prediction rule: score `>= 50` on a `0-100` scale
+- Statistical model score: `ml_score`
+- AI image model score: `cv_score`
+
+### Exact figures (current dataset snapshot)
+
+- Total parcels: `8,877`
+- Confirmed abandoned positives: `138`
+
+Statistical model (`ml_score >= 50`):
+
+- Accuracy: `91.13%` (`8090 / 8877`)
+- Confusion counts: `TP=111, TN=7979, FP=760, FN=27`
+- Recall on confirmed abandoned: `80.43%`
+
+AI image model (`cv_score >= 50`):
+
+- Evaluated on `8,874` parcels with non-missing `cv_score` (3 missing imagery/model outputs)
+- Accuracy: `86.89%` (`7711 / 8874`)
+- Confusion counts: `TP=89, TN=7622, FP=1114, FN=49`
+- Recall on confirmed abandoned: `64.49%`
+
+Notes for rigorous interpretation:
+
+- Dataset is highly imbalanced (138 positives vs 8,739 negatives), so accuracy alone can look high.
+- For interviews, discuss accuracy with recall, specificity, and confusion matrix to avoid misleading conclusions.
+
+### How these figures were obtained
+
+We computed them directly from `ferguson_complete_data.csv` by thresholding model scores at `50` and comparing to `is_abandoned`:
+
+```python
+import csv
+
+with open("ferguson_complete_data.csv", newline="", encoding="utf-8") as f:
+    rows = list(csv.DictReader(f))
+
+def eval_acc(score_col):
+    vals = []
+    for r in rows:
+        if score_col == "cv_score" and r[score_col] in ("", "nan", "NaN", None):
+            continue
+        y = 1 if float(r["is_abandoned"]) >= 0.5 else 0
+        s = float(r[score_col]) if r[score_col] not in ("", None) else 0.0
+        yhat = 1 if s >= 50 else 0
+        vals.append((y, yhat))
+    acc = sum(1 for y, yhat in vals if y == yhat) / len(vals)
+    return acc
+```
+
 ## 11) Limitations and Next Improvements
 
 - CLIP prompt-based classification is zero-shot; supervised local fine-tuning could improve calibration
