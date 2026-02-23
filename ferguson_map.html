@@ -295,6 +295,8 @@ const data={};
 const layers={};
 const layerNames=['cv','ensemble','ml','risk','value','age','occ','critical','confirmed'];
 const loadingLayers={};
+const ensembleSearchEntries=[];
+const ensembleLayerByAddress={};
 
 function updateProgress(done,total,label){
 const pct=Math.max(0,Math.min(100,Math.round((done/total)*100)));
@@ -315,6 +317,54 @@ data[name]=json;
 return json;
 })();
 try{return await loadingLayers[name];}finally{delete loadingLayers[name];}
+}
+
+function extractAddress(props){
+if(props.t){
+const fromTooltip=props.t.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+if(fromTooltip)return fromTooltip;
+}
+if(props.p){
+const m=props.p.match(/<div style='font-weight:600;font-size:15px;margin-bottom:6px'>(.*?)<\/div>/i);
+if(m&&m[1]){
+return m[1].replace(/<[^>]*>/g,' ').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
+}
+}
+return '';
+}
+
+function ensureEnsembleSearchEntries(){
+if(ensembleSearchEntries.length||!data.ensemble)return;
+data.ensemble.forEach(f=>{
+const address=extractAddress(f.properties||{});
+if(address){
+ensembleSearchEntries.push({
+address,
+addressLower:address.toLowerCase(),
+color:(f.properties&&f.properties.c)||'#34495e'
+});
+}
+});
+}
+
+async function ensureEnsembleSearchLayers(){
+if(!data.ensemble)await loadLayer('ensemble');
+ensureEnsembleSearchEntries();
+if(!layers.ensemble){
+layers.ensemble=L.geoJSON({type:'FeatureCollection',features:data.ensemble},{
+style:f=>({'fillColor':f.properties.c,'color':'#34495e','weight':0.3,'fillOpacity':0.7}),
+onEachFeature:(f,l)=>{
+if(f.properties.p)l.bindPopup(f.properties.p,{maxWidth:360});
+if(f.properties.t)l.bindTooltip(f.properties.t,{sticky:true});
+}
+});
+}
+if(Object.keys(ensembleLayerByAddress).length===0){
+layers.ensemble.eachLayer(l=>{
+const address=extractAddress(l.feature.properties||{});
+if(address&&!ensembleLayerByAddress[address])ensembleLayerByAddress[address]=l;
+});
+}
 }
 
 function loadRemainingInBackground(){
@@ -430,26 +480,20 @@ if(!existing)searchResultsData.push(r);
 
 // Fallback: ensure ensemble data is searchable even if other layers are not yet initialized.
 if(searchResultsData.length===0){
-if(!data.ensemble){
 try{
-await loadLayer('ensemble');
+await ensureEnsembleSearchLayers();
+ensembleSearchEntries.forEach(e=>{
+if(e.addressLower.includes(input)){
+const layer=ensembleLayerByAddress[e.address];
+if(layer){
+const existing=searchResultsData.find(x=>x.address===e.address);
+if(!existing)searchResultsData.push({address:e.address,layer,color:e.color});
+}
+}
+});
 }catch(err){
 console.error(err);
 }
-}
-if(data.ensemble&&!layers.ensemble){
-layers.ensemble=L.geoJSON({type:'FeatureCollection',features:data.ensemble},{
-style:f=>({'fillColor':f.properties.c,'color':'#34495e','weight':0.3,'fillOpacity':0.7}),
-onEachFeature:(f,l)=>{
-if(f.properties.p)l.bindPopup(f.properties.p,{maxWidth:360});
-if(f.properties.t)l.bindTooltip(f.properties.t,{sticky:true});
-}
-});
-}
-collectLayerMatches(layers.ensemble,input).forEach(r=>{
-const existing=searchResultsData.find(x=>x.address===r.address);
-if(!existing)searchResultsData.push(r);
-});
 }
 
 searchResultsData.sort((a,b)=>a.address.localeCompare(b.address));
