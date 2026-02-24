@@ -162,17 +162,23 @@
 <li><strong>Search:</strong> Type an address to see matching results, then click a result or press Enter to zoom to it</li>
 <li><strong>Legend:</strong> Click "Color Guide" (bottom-left) to show/hide the legend</li>
 </ul>
+<p><strong>Models:</strong></p>
+<ul>
+<li><strong>1) Statistical Model:</strong> Uses parcel attributes such as building value and ownership type to estimate the probability of abandonment. It is built with logistic regression, which learns how strongly each feature is associated with confirmed abandoned properties.</li>
+<li><strong>2) AI Image Analysis:</strong> Uses Google Street View imagery and a vision classifier to estimate whether a property appears occupied, abandoned, or a vacant lot based on visual condition.</li>
+<li><strong>3) Combined Score:</strong> Uses a weighted blend of the two models (70% statistical, 30% AI image) based on validation performance, so record-based and image-based evidence are both represented.</li>
+</ul>
+<p><strong>Accuracy vs Confirmed Abandoned List:</strong></p>
+<ul>
+<li><strong>Statistical Model:</strong> 93.65%</li>
+<li><strong>AI Image Analysis:</strong> 86.89%</li>
+<li><strong>Combined Score:</strong> 95.39%</li>
+</ul>
 <p><strong>Data Sources:</strong></p>
 <ul style="margin-top:8px">
 <li><a href="https://data-stlcogis.opendata.arcgis.com/datasets/fd4893ca99244279adb2ffa206e09ec7_0/explore" target="_blank" style="color:#3498db">St. Louis County Open Data (Property Records)</a></li>
 <li><a href="https://www.fergusoncity.com/701/Property-Restoration-Program" target="_blank" style="color:#3498db">Ferguson City Property Restoration Program (Confirmed List)</a></li>
 <li><a href="https://www.google.com/streetview/" target="_blank" style="color:#3498db">Google Street View Imagery</a></li>
-</ul>
-<p><strong>Models (plain-language):</strong></p>
-<ul>
-<li><strong>1) Statistical Model:</strong> Uses property records (like building value and ownership type) to estimate abandonment likelihood. It is built with logistic regression, a probability model that learns patterns from confirmed abandoned vs not-abandoned properties. <strong>Accuracy vs confirmed list: 93.65%</strong>.</li>
-<li><strong>2) AI Image Analysis:</strong> Uses Google Street View photos and an AI vision model to classify each property as occupied, abandoned, or vacant lot. Under the hood it compares the image to text descriptions and converts that to confidence scores. <strong>Accuracy vs confirmed list: 86.89%</strong>.</li>
-<li><strong>3) Combined Score:</strong> A blended average of the statistical and AI scores, used as the main view to balance record-based and image-based signals. <strong>Accuracy vs confirmed list: 95.39%</strong>.</li>
 </ul>
 <button class="help-close" onclick="toggleHelp()">Close</button>
 </div>
