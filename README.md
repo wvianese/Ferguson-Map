@@ -130,6 +130,12 @@ Important note on code violations (`CODE_ENFOR`):
 - Log transforms for skewed monetary/size variables (`log1p`)
 - Standardization (z-score) before regression
 
+Why log transforms were used:
+
+- Property value and size fields have long right tails (a small number of very large values).
+- `log1p` compresses those extremes so outliers do not dominate model fitting.
+- This typically improves coefficient stability and probability calibration in logistic regression.
+
 ### Model form
 
 Class-weighted L2-regularized logistic regression:
