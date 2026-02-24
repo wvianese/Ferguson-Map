@@ -168,7 +168,12 @@
 <li><a href="https://www.fergusoncity.com/701/Property-Restoration-Program" target="_blank" style="color:#3498db">Ferguson City Property Restoration Program (Confirmed List)</a></li>
 <li><a href="https://www.google.com/streetview/" target="_blank" style="color:#3498db">Google Street View Imagery</a></li>
 </ul>
-<p><strong>Models:</strong> Statistical patterns, AI image classification, and combined ensemble predictions</p>
+<p><strong>Models (plain-language):</strong></p>
+<ul>
+<li><strong>1) Statistical Model:</strong> Uses property records (like building value and ownership type) to estimate abandonment likelihood. It is built with logistic regression, a probability model that learns patterns from confirmed abandoned vs not-abandoned properties. <strong>Accuracy vs confirmed list: 93.65%</strong>.</li>
+<li><strong>2) AI Image Analysis:</strong> Uses Google Street View photos and an AI vision model to classify each property as occupied, abandoned, or vacant lot. Under the hood it compares the image to text descriptions and converts that to confidence scores. <strong>Accuracy vs confirmed list: 86.89%</strong>.</li>
+<li><strong>3) Combined Score:</strong> A blended average of the statistical and AI scores, used as the main view to balance record-based and image-based signals. <strong>Accuracy vs confirmed list: 95.39%</strong>.</li>
+</ul>
 <button class="help-close" onclick="toggleHelp()">Close</button>
 </div>
 </div>
