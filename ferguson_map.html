@@ -165,7 +165,7 @@
 <p><strong>Models:</strong></p>
 <ul>
 <li><strong>1) Statistical Model:</strong> Uses parcel features such as building value and ownership type in a regularized logistic regression model to estimate the probability that a property is abandoned. The model is trained on the confirmed abandoned list so each feature is weighted by how strongly it relates to known outcomes.</li>
-<li><strong>2) AI Image Analysis:</strong> Uses Google Street View imagery and a vision classifier to estimate probabilities for occupied, abandoned, and vacant-lot conditions from visible property condition. It contributes independent visual evidence that is not captured by parcel records alone.</li>
+<li><strong>2) AI Image Analysis:</strong> Uses Google Street View imagery and a vision classifier to estimate probabilities for occupied, abandoned, and vacant-lot conditions from visible property condition. This adds what the property physically looks like, not just what is in county records.</li>
 <li><strong>3) Combined Score:</strong> Blends both models with validation-tuned weights (70% statistical, 30% AI image). This weighted average is used as the primary score because it is more stable and more accurate than using either source by itself.</li>
 </ul>
 <p><strong>Accuracy vs Confirmed Abandoned List:</strong></p>
