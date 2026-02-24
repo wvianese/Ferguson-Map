@@ -164,9 +164,9 @@
 </ul>
 <p><strong>Models:</strong></p>
 <ul>
-<li><strong>1) Statistical Model:</strong> Uses parcel attributes such as building value and ownership type to estimate the probability of abandonment. It is built with logistic regression, which learns how strongly each feature is associated with confirmed abandoned properties.</li>
-<li><strong>2) AI Image Analysis:</strong> Uses Google Street View imagery and a vision classifier to estimate whether a property appears occupied, abandoned, or a vacant lot based on visual condition.</li>
-<li><strong>3) Combined Score:</strong> Uses a weighted blend of the two models (70% statistical, 30% AI image) based on validation performance, so record-based and image-based evidence are both represented.</li>
+<li><strong>1) Statistical Model:</strong> Uses parcel features (for example building value and ownership type) and a regularized logistic regression to estimate abandonment probability from confirmed labels.</li>
+<li><strong>2) AI Image Analysis:</strong> Uses Google Street View imagery and a vision classifier to produce class probabilities for occupied, abandoned, and vacant-lot conditions from facade/lot appearance.</li>
+<li><strong>3) Combined Score:</strong> Uses a validation-tuned weighted blend of both models (70% statistical, 30% AI image) to improve overall predictive reliability.</li>
 </ul>
 <p><strong>Accuracy vs Confirmed Abandoned List:</strong></p>
 <ul>
