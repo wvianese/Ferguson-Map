@@ -334,19 +334,30 @@ if(bar)bar.style.width=pct+'%';
 if(sub&&label)sub.textContent=label;
 }
 
+async function fetchJsonWithTimeout(url,options={},timeoutMs=15000){
+const controller=new AbortController();
+const id=setTimeout(()=>controller.abort(),timeoutMs);
+try{
+const response=await fetch(url,{...options,signal:controller.signal});
+return response;
+}finally{
+clearTimeout(id);
+}
+}
+
 async function loadLayer(name){
 if(data[name])return data[name];
 if(loadingLayers[name])return loadingLayers[name];
 loadingLayers[name]=(async()=>{
 let json;
 try{
-const response=await fetch(`map_data/${name}.json`,{cache:'default'});
+const response=await fetchJsonWithTimeout(`map_data/${name}.json`,{cache:'default'},15000);
 if(!response.ok)throw new Error(`Failed to load ${name}.json (${response.status})`);
 json=await response.json();
 if(!Array.isArray(json))throw new Error(`Invalid layer payload: ${name}`);
 }catch(primaryErr){
 const bust=Date.now();
-const retry=await fetch(`map_data/${name}.json?v=${bust}`,{cache:'no-store'});
+const retry=await fetchJsonWithTimeout(`map_data/${name}.json?v=${bust}`,{cache:'no-store'},20000);
 if(!retry.ok)throw primaryErr;
 json=await retry.json();
 if(!Array.isArray(json))throw primaryErr;
