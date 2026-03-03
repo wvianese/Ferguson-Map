@@ -194,37 +194,37 @@
 <div class="layer-group">
 <div class="group-title">Confirmed Data</div>
 <div class="layer-item">
-<div class="layer-label" onclick="tog('confirmed')"><div style='font-weight:600'>City Confirmed Abandoned</div><div style='font-size:10px;color:#7f8c8d'>Official list (138 properties)</div></div>
+<div class="layer-label" onclick="toggleFromLabel('confirmed')"><div style='font-weight:600'>City Confirmed Abandoned</div><div style='font-size:10px;color:#7f8c8d'>Official list (138 properties)</div></div>
 <label class="toggle"><input type="checkbox" id="confirmed" onchange="tog('confirmed')"><span class="slider"></span></label>
 </div>
 </div>
 <div class="layer-group">
 <div class="group-title">Prediction Models</div>
 <div class="layer-item">
-<div class="layer-label" onclick="tog('ml')"><div style='font-weight:600'>Statistical Model</div><div style='font-size:10px;color:#7f8c8d'>Property data (STL County open data)</div></div>
+<div class="layer-label" onclick="toggleFromLabel('ml')"><div style='font-weight:600'>Statistical Model</div><div style='font-size:10px;color:#7f8c8d'>Property data (STL County open data)</div></div>
 <label class="toggle"><input type="checkbox" id="ml" onchange="tog('ml')"><span class="slider"></span></label>
 </div>
 <div class="layer-item">
-<div class="layer-label" onclick="tog('cv')"><div style='font-weight:600'>AI Image Analysis</div><div style='font-size:10px;color:#7f8c8d'>Google Street View classification</div></div>
+<div class="layer-label" onclick="toggleFromLabel('cv')"><div style='font-weight:600'>AI Image Analysis</div><div style='font-size:10px;color:#7f8c8d'>Google Street View classification</div></div>
 <label class="toggle"><input type="checkbox" id="cv" onchange="tog('cv')"><span class="slider"></span></label>
 </div>
 <div class="layer-item">
-<div class="layer-label" onclick="tog('ensemble')"><div style='font-weight:600'>Combined Score</div><div style='font-size:10px;color:#7f8c8d'>Primary score: statistical + AI models</div></div>
+<div class="layer-label" onclick="toggleFromLabel('ensemble')"><div style='font-weight:600'>Combined Score</div><div style='font-size:10px;color:#7f8c8d'>Primary score: statistical + AI models</div></div>
 <label class="toggle"><input type="checkbox" id="ensemble" onchange="tog('ensemble')" checked><span class="slider"></span></label>
 </div>
 </div>
 <div class="layer-group">
 <div class="group-title">Risk Factors</div>
 <div class="layer-item">
-<div class="layer-label" onclick="tog('value')"><div style='font-weight:600'>Property Value</div><div style='font-size:10px;color:#7f8c8d'>Assessed market value</div></div>
+<div class="layer-label" onclick="toggleFromLabel('value')"><div style='font-weight:600'>Property Value</div><div style='font-size:10px;color:#7f8c8d'>Assessed market value</div></div>
 <label class="toggle"><input type="checkbox" id="value" onchange="tog('value')"><span class="slider"></span></label>
 </div>
 <div class="layer-item">
-<div class="layer-label" onclick="tog('age')"><div style='font-weight:600'>Building Age</div><div style='font-size:10px;color:#7f8c8d'>Years since construction</div></div>
+<div class="layer-label" onclick="toggleFromLabel('age')"><div style='font-weight:600'>Building Age</div><div style='font-size:10px;color:#7f8c8d'>Years since construction</div></div>
 <label class="toggle"><input type="checkbox" id="age" onchange="tog('age')"><span class="slider"></span></label>
 </div>
 <div class="layer-item">
-<div class="layer-label" onclick="tog('occ')"><div style='font-weight:600'>Occupancy Status</div><div style='font-size:10px;color:#7f8c8d'>Owner-occupied vs rental</div></div>
+<div class="layer-label" onclick="toggleFromLabel('occ')"><div style='font-weight:600'>Occupancy Status</div><div style='font-size:10px;color:#7f8c8d'>Owner-occupied vs rental</div></div>
 <label class="toggle"><input type="checkbox" id="occ" onchange="tog('occ')"><span class="slider"></span></label>
 </div>
 </div>
@@ -325,7 +325,6 @@ const layerNames=['ml','cv','ensemble','risk','value','age','occ','critical','co
 const loadingLayers={};
 const ensembleSearchEntries=[];
 const ensembleLayerByAddress={};
-let backgroundLoadsStarted=false;
 let startupCompleted=false;
 
 function updateProgress(done,total,label){
@@ -418,19 +417,6 @@ if(address&&!ensembleLayerByAddress[address])ensembleLayerByAddress[address]=l;
 }
 }
 
-function loadRemainingInBackground(){
-if(backgroundLoadsStarted)return;
-backgroundLoadsStarted=true;
-let done=1;
-const remaining=layerNames.filter(n=>n!=='ensemble');
-for(const name of remaining){
-loadLayer(name).then(()=>{
-done+=1;
-updateProgress(done,layerNames.length,`Loaded ${done}/${layerNames.length} layers`);
-}).catch(err=>console.error(err));
-}
-}
-
 function completeStartup(){
 if(startupCompleted)return;
 startupCompleted=true;
@@ -449,7 +435,6 @@ await tog('ensemble');
 }catch(err){
 console.error(err);
 }
-loadRemainingInBackground();
 },startupGuardMs);
 try{
 updateProgress(0,layerNames.length,'Loading core layer...');
@@ -457,14 +442,19 @@ await loadLayer('ensemble');
 updateProgress(1,layerNames.length,'Preparing map...');
 completeStartup();
 await tog('ensemble');
-loadRemainingInBackground();
 }catch(err){
 console.error(err);
 completeStartup();
-loadRemainingInBackground();
 }finally{
 clearTimeout(startupGuard);
 }
+}
+
+function toggleFromLabel(id){
+const checkbox=document.getElementById(id);
+if(!checkbox)return;
+checkbox.checked=!checkbox.checked;
+tog(id);
 }
 
 async function tog(id){
