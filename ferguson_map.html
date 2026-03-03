@@ -338,7 +338,7 @@ async function loadLayer(name){
 if(data[name])return data[name];
 if(loadingLayers[name])return loadingLayers[name];
 loadingLayers[name]=(async()=>{
-const response=await fetch(`map_data/${name}.json`,{cache:'no-store'});
+const response=await fetch(`map_data/${name}.json`,{cache:'force-cache'});
 if(!response.ok)throw new Error(`Failed to load ${name}.json (${response.status})`);
 const json=await response.json();
 data[name]=json;
