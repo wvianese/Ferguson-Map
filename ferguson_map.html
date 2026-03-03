@@ -325,6 +325,8 @@ const layerNames=['ml','cv','ensemble','risk','value','age','occ','critical','co
 const loadingLayers={};
 const ensembleSearchEntries=[];
 const ensembleLayerByAddress={};
+let backgroundLoadsStarted=false;
+let startupCompleted=false;
 
 function updateProgress(done,total,label){
 const pct=Math.max(0,Math.min(100,Math.round((done/total)*100)));
@@ -417,6 +419,8 @@ if(address&&!ensembleLayerByAddress[address])ensembleLayerByAddress[address]=l;
 }
 
 function loadRemainingInBackground(){
+if(backgroundLoadsStarted)return;
+backgroundLoadsStarted=true;
 let done=1;
 const remaining=layerNames.filter(n=>n!=='ensemble');
 for(const name of remaining){
@@ -427,18 +431,39 @@ updateProgress(done,layerNames.length,`Loaded ${done}/${layerNames.length} layer
 }
 }
 
+function completeStartup(){
+if(startupCompleted)return;
+startupCompleted=true;
+const loader=document.getElementById('loader');
+if(loader)loader.style.display='none';
+}
+
 async function loadData(){
+const startupGuardMs=20000;
+const startupGuard=setTimeout(async()=>{
+completeStartup();
+try{
+if(document.getElementById('ensemble').checked){
+await tog('ensemble');
+}
+}catch(err){
+console.error(err);
+}
+loadRemainingInBackground();
+},startupGuardMs);
 try{
 updateProgress(0,layerNames.length,'Loading core layer...');
 await loadLayer('ensemble');
 updateProgress(1,layerNames.length,'Preparing map...');
-document.getElementById('loader').style.display='none';
+completeStartup();
 await tog('ensemble');
 loadRemainingInBackground();
 }catch(err){
 console.error(err);
-const sub=document.getElementById('loader-sub');
-if(sub)sub.textContent='Failed to load map data. Please refresh.';
+completeStartup();
+loadRemainingInBackground();
+}finally{
+clearTimeout(startupGuard);
 }
 }
 
