@@ -322,6 +322,7 @@
 const data={};
 const layers={};
 const layerNames=['ml','cv','ensemble','risk','value','age','occ','critical','confirmed'];
+const fullCoverageLayerIds=['ml','cv','ensemble','risk','value','age','occ','critical'];
 const loadingLayers={};
 const ensembleSearchEntries=[];
 const ensembleLayerByAddress={};
@@ -417,6 +418,28 @@ if(address&&!ensembleLayerByAddress[address])ensembleLayerByAddress[address]=l;
 }
 }
 
+async function ensureConfirmedContextLayer(){
+if(layers.confirmedContext)return;
+if(!data.ensemble)await loadLayer('ensemble');
+layers.confirmedContext=L.geoJSON({type:'FeatureCollection',features:data.ensemble},{
+interactive:false,
+style:()=>({'fillColor':'#d5dbe1','color':'#b7bfc8','weight':0.2,'fillOpacity':0.45})
+});
+}
+
+async function syncConfirmedContextLayer(map){
+const confirmedChecked=document.getElementById('confirmed')&&document.getElementById('confirmed').checked;
+const hasOtherCoverage=fullCoverageLayerIds.some(id=>document.getElementById(id)&&document.getElementById(id).checked);
+if(confirmedChecked&&!hasOtherCoverage){
+await ensureConfirmedContextLayer();
+layers.confirmedContext.addTo(map);
+layers.confirmedContext.bringToBack();
+if(layers.confirmed&&map.hasLayer(layers.confirmed))layers.confirmed.bringToFront();
+}else if(layers.confirmedContext&&map.hasLayer(layers.confirmedContext)){
+map.removeLayer(layers.confirmedContext);
+}
+}
+
 function completeStartup(){
 if(startupCompleted)return;
 startupCompleted=true;
@@ -483,6 +506,11 @@ if(f.properties.t)l.bindTooltip(f.properties.t,{sticky:true,className:'property-
 layers[id].addTo(map);
 }else{
 if(layers[id])map.removeLayer(layers[id]);
+}
+try{
+await syncConfirmedContextLayer(map);
+}catch(err){
+console.error(err);
 }
 }
 
