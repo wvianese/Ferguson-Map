@@ -448,29 +448,44 @@ const loader=document.getElementById('loader');
 if(loader)loader.style.display='none';
 }
 
-async function loadData(){
-const startupGuardMs=20000;
-const startupGuard=setTimeout(async()=>{
-completeStartup();
+async function preloadRemainingLayers(onProgress){
+const remaining=layerNames.filter(n=>n!=='ensemble');
+let done=1;
+let index=0;
+const concurrency=3;
+const worker=async()=>{
+while(index<remaining.length){
+const name=remaining[index];
+index+=1;
 try{
-if(document.getElementById('ensemble').checked){
-await tog('ensemble');
-}
+await loadLayer(name);
 }catch(err){
 console.error(err);
+}finally{
+done+=1;
+onProgress(done,name);
 }
-},startupGuardMs);
+}
+};
+const workerCount=Math.min(concurrency,remaining.length);
+const workers=Array.from({length:workerCount},()=>worker());
+await Promise.all(workers);
+}
+
+async function loadData(){
 try{
 updateProgress(0,layerNames.length,'Loading core layer...');
 await loadLayer('ensemble');
-updateProgress(1,layerNames.length,'Preparing map...');
+updateProgress(1,layerNames.length,'Loading remaining layers...');
+await preloadRemainingLayers((done)=>updateProgress(done,layerNames.length,`Loaded ${done}/${layerNames.length} layers`));
+updateProgress(layerNames.length,layerNames.length,'Preparing map...');
 completeStartup();
 await tog('ensemble');
 }catch(err){
 console.error(err);
+const sub=document.getElementById('loader-sub');
+if(sub)sub.textContent='Failed to load map data. Please refresh.';
 completeStartup();
-}finally{
-clearTimeout(startupGuard);
 }
 }
 
