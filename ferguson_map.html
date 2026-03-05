@@ -458,10 +458,7 @@ ensureEnsembleSearchEntries();
 if(!layers.ensemble){
 layers.ensemble=L.geoJSON({type:'FeatureCollection',features:data.ensemble},{
 style:f=>({'fillColor':f.properties.c,'color':'#34495e','weight':0.3,'fillOpacity':0.7}),
-onEachFeature:(f,l)=>{
-if(f.properties.p)l.bindPopup(f.properties.p,{maxWidth:360});
-if(f.properties.t)l.bindTooltip(f.properties.t,{sticky:true,className:'property-tooltip'});
-}
+onEachFeature:attachLazyFeatureHandlers
 });
 }
 if(Object.keys(ensembleLayerByAddress).length===0){
@@ -494,14 +491,33 @@ map.removeLayer(layers.confirmedContext);
 }
 }
 
+function ensureLayerPopupBound(layer){
+if(!layer||!layer.feature||!layer.feature.properties)return;
+const html=layer.feature.properties.p;
+if(html&&!layer.getPopup())layer.bindPopup(html,{maxWidth:360});
+}
+
+function ensureLayerTooltipBound(layer){
+if(!layer||!layer.feature||!layer.feature.properties)return;
+const tip=layer.feature.properties.t;
+if(tip&&!layer.getTooltip())layer.bindTooltip(tip,{sticky:true,className:'property-tooltip'});
+}
+
+function attachLazyFeatureHandlers(feature,layer){
+layer.on('click',()=>{
+ensureLayerPopupBound(layer);
+});
+layer.on('mouseover',()=>{
+ensureLayerTooltipBound(layer);
+if(layer.getTooltip())layer.openTooltip();
+});
+}
+
 function ensureLayerInstance(id){
 if(layers[id]||!data[id])return;
 layers[id]=L.geoJSON({type:'FeatureCollection',features:data[id]},{
 style:f=>({'fillColor':f.properties.c,'color':'#34495e','weight':0.3,'fillOpacity':0.7}),
-onEachFeature:(f,l)=>{
-if(f.properties.p)l.bindPopup(f.properties.p,{maxWidth:360});
-if(f.properties.t)l.bindTooltip(f.properties.t,{sticky:true,className:'property-tooltip'});
-}
+onEachFeature:attachLazyFeatureHandlers
 });
 }
 
@@ -548,6 +564,7 @@ updateProgress(Math.min(loaded,layerNames.length),layerNames.length,'Opening map
 completeStartup();
 if(document.getElementById('ensemble').checked){
 if(!data.ensemble)await loadLayer('ensemble');
+await new Promise(resolve=>requestAnimationFrame(resolve));
 ensureLayerInstance('ensemble');
 if(layers.ensemble&&!map.hasLayer(layers.ensemble))layers.ensemble.addTo(map);
 }
@@ -711,6 +728,7 @@ function selectResult(result){
 const map=window.map_ec7c941fd4cd475eb2c6ef06527bf925;
 const center=result.layer.getBounds().getCenter();
 map.setView(center,16);
+ensureLayerPopupBound(result.layer);
 setTimeout(()=>{
 result.layer.openPopup();
 },300);
