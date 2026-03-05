@@ -724,9 +724,19 @@ function selectResult(result){
 const map=window.map_ec7c941fd4cd475eb2c6ef06527bf925;
 const center=result.layer.getBounds().getCenter();
 map.setView(center,16);
-ensureLayerPopupBound(result.layer);
 setTimeout(()=>{
+if(map.hasLayer(result.layer)){
+ensureLayerPopupBound(result.layer);
 result.layer.openPopup();
+return;
+}
+const props=(result.layer.feature&&result.layer.feature.properties)||{};
+if(props.p){
+L.popup({maxWidth:360})
+.setLatLng(center)
+.setContent(props.p)
+.openOn(map);
+}
 },300);
 document.getElementById('searchResults').classList.remove('show');
 document.getElementById('searchInput').value=result.address.replace(/<[^>]*>/g,'');
