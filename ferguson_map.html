@@ -326,6 +326,7 @@ const data={};
 const layers={};
 const layerNames=['ml','cv','ensemble','risk','value','age','occ','critical','confirmed'];
 const fullCoverageLayerIds=['ml','cv','ensemble','risk','value','age','occ','critical'];
+const preloadPriority=['ensemble','confirmed','ml','cv','occ','risk','value','age','critical'];
 const loadingLayers={};
 const ensembleSearchEntries=[];
 const ensembleLayerByAddress={};
@@ -493,6 +494,17 @@ map.removeLayer(layers.confirmedContext);
 }
 }
 
+function ensureLayerInstance(id){
+if(layers[id]||!data[id])return;
+layers[id]=L.geoJSON({type:'FeatureCollection',features:data[id]},{
+style:f=>({'fillColor':f.properties.c,'color':'#34495e','weight':0.3,'fillOpacity':0.7}),
+onEachFeature:(f,l)=>{
+if(f.properties.p)l.bindPopup(f.properties.p,{maxWidth:360});
+if(f.properties.t)l.bindTooltip(f.properties.t,{sticky:true,className:'property-tooltip'});
+}
+});
+}
+
 function startLoaderPhrases(){
 const hint=document.getElementById('loader-hint');
 if(!hint)return;
@@ -520,39 +532,45 @@ const loader=document.getElementById('loader');
 if(loader)loader.style.display='none';
 }
 
-async function preloadRemainingLayers(onProgress){
-const remaining=layerNames.filter(n=>n!=='ensemble');
-let done=1;
-let index=0;
-const concurrency=3;
-const worker=async()=>{
-while(index<remaining.length){
-const name=remaining[index];
-index+=1;
-try{
-await loadLayer(name);
-}catch(err){
-console.error(err);
-}finally{
-done+=1;
-onProgress(done,name);
-}
-}
-};
-const workerCount=Math.min(concurrency,remaining.length);
-const workers=Array.from({length:workerCount},()=>worker());
-await Promise.all(workers);
-}
-
 async function loadData(){
 try{
-updateProgress(0,layerNames.length,'Loading core layer...');
-await loadLayer('ensemble');
-updateProgress(1,layerNames.length,'Loading remaining layers...');
-await preloadRemainingLayers((done)=>updateProgress(done,layerNames.length,`Loaded ${done}/${layerNames.length} layers`));
-updateProgress(layerNames.length,layerNames.length,'Preparing map...');
+const warmupMs=6500;
+const warmupLayers=4;
+const start=Date.now();
+let loaded=0;
+let opened=false;
+const map=window.map_ec7c941fd4cd475eb2c6ef06527bf925;
+
+const openMapIfNeeded=async()=>{
+if(opened)return;
+opened=true;
+updateProgress(Math.min(loaded,layerNames.length),layerNames.length,'Opening map and continuing background loading...');
 completeStartup();
-await tog('ensemble');
+if(document.getElementById('ensemble').checked){
+if(!data.ensemble)await loadLayer('ensemble');
+ensureLayerInstance('ensemble');
+if(layers.ensemble&&!map.hasLayer(layers.ensemble))layers.ensemble.addTo(map);
+}
+};
+
+updateProgress(0,layerNames.length,'Warming up key layers...');
+for(const name of preloadPriority){
+try{
+await loadLayer(name);
+ensureLayerInstance(name);
+}catch(err){
+console.error(err);
+}
+loaded+=1;
+updateProgress(Math.min(loaded,layerNames.length),layerNames.length,`Loaded ${loaded}/${layerNames.length} layers`);
+if(!opened&&(loaded>=warmupLayers||Date.now()-start>=warmupMs)){
+await openMapIfNeeded();
+}
+if(opened){
+await new Promise(resolve=>setTimeout(resolve,0));
+}
+}
+await openMapIfNeeded();
 }catch(err){
 console.error(err);
 const sub=document.getElementById('loader-sub');
@@ -582,15 +600,7 @@ checkbox.checked=false;
 return;
 }
 }
-if(!layers[id]){
-layers[id]=L.geoJSON({type:'FeatureCollection',features:data[id]},{
-style:f=>({'fillColor':f.properties.c,'color':'#34495e','weight':0.3,'fillOpacity':0.7}),
-onEachFeature:(f,l)=>{
-if(f.properties.p)l.bindPopup(f.properties.p,{maxWidth:360});
-if(f.properties.t)l.bindTooltip(f.properties.t,{sticky:true,className:'property-tooltip'});
-}
-});
-}
+ensureLayerInstance(id);
 layers[id].addTo(map);
 }else{
 if(layers[id])map.removeLayer(layers[id]);
