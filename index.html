@@ -62,5 +62,44 @@
             and statistical modeling to identify housing abandonment risk.
         </div>
     </div>
+    <script>
+        (function startMapWarmup() {
+            if (!('caches' in window)) return;
+
+            const cacheName = 'ferguson-map-data-v4';
+            const preloadOrder = ['ensemble', 'confirmed', 'ml', 'cv', 'occ', 'risk', 'value', 'age', 'critical'];
+            const concurrency = 3;
+            let nextIndex = 0;
+
+            async function worker(cache) {
+                while (nextIndex < preloadOrder.length) {
+                    const layer = preloadOrder[nextIndex];
+                    nextIndex += 1;
+                    const url = `map_data/${layer}.json`;
+                    try {
+                        const existing = await cache.match(url);
+                        if (existing && existing.ok) continue;
+                        const response = await fetch(url, { cache: 'default' });
+                        if (response.ok) {
+                            await cache.put(url, response.clone());
+                        }
+                    } catch (err) {
+                        // Keep warmup silent; runtime loader handles retries.
+                        console.error(err);
+                    }
+                }
+            }
+
+            window.addEventListener('load', async () => {
+                try {
+                    const cache = await caches.open(cacheName);
+                    const workers = Array.from({ length: Math.min(concurrency, preloadOrder.length) }, () => worker(cache));
+                    await Promise.all(workers);
+                } catch (err) {
+                    console.error(err);
+                }
+            });
+        })();
+    </script>
 </body>
 </html>
