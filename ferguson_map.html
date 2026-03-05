@@ -550,44 +550,48 @@ if(loader)loader.style.display='none';
 
 async function loadData(){
 try{
-const warmupMs=1200;
-const warmupLayers=1;
-const start=Date.now();
+const maxBlockingMs=1800;
 let loaded=0;
-let opened=false;
 const map=window.map_ec7c941fd4cd475eb2c6ef06527bf925;
+let progressTotal=preloadPriority.length;
 
-const openMapIfNeeded=async()=>{
-if(opened)return;
-opened=true;
-updateProgress(Math.min(loaded,layerNames.length),layerNames.length,'Opening map and continuing background loading...');
+const openMapNow=async()=>{
+updateProgress(Math.min(loaded,progressTotal),progressTotal,'Opening map and loading layers in background...');
 completeStartup();
-if(document.getElementById('ensemble').checked){
-if(!data.ensemble)await loadLayer('ensemble');
+if(data.ensemble){
 await new Promise(resolve=>requestAnimationFrame(resolve));
 ensureLayerInstance('ensemble');
-if(layers.ensemble&&!map.hasLayer(layers.ensemble))layers.ensemble.addTo(map);
+if(document.getElementById('ensemble').checked&&layers.ensemble&&!map.hasLayer(layers.ensemble)){
+layers.ensemble.addTo(map);
+}
 }
 };
 
-updateProgress(0,layerNames.length,'Warming up key layers...');
-for(const name of preloadPriority){
-try{
-await loadLayer(name);
-ensureLayerInstance(name);
-}catch(err){
-console.error(err);
-}
+const ensemblePromise=(async()=>{
+await loadLayer('ensemble');
 loaded+=1;
-updateProgress(Math.min(loaded,layerNames.length),layerNames.length,`Loaded ${loaded}/${layerNames.length} layers`);
-if(!opened&&(loaded>=warmupLayers||Date.now()-start>=warmupMs)){
-await openMapIfNeeded();
+updateProgress(Math.min(loaded,progressTotal),progressTotal,`Loaded ${loaded}/${progressTotal} layers`);
+ensureLayerInstance('ensemble');
+if(document.getElementById('ensemble').checked&&startupCompleted&&layers.ensemble&&!map.hasLayer(layers.ensemble)){
+layers.ensemble.addTo(map);
 }
-if(opened){
-await new Promise(resolve=>setTimeout(resolve,0));
+})();
+
+updateProgress(0,progressTotal,'Loading core layer...');
+await Promise.race([
+ensemblePromise,
+new Promise(resolve=>setTimeout(resolve,maxBlockingMs))
+]);
+await openMapNow();
+
+for(const name of preloadPriority){
+if(name==='ensemble')continue;
+loadLayer(name).then(()=>{
+loaded+=1;
+updateProgress(Math.min(loaded,progressTotal),progressTotal,`Loaded ${loaded}/${progressTotal} layers`);
+ensureLayerInstance(name);
+}).catch(err=>console.error(err));
 }
-}
-await openMapIfNeeded();
 }catch(err){
 console.error(err);
 const sub=document.getElementById('loader-sub');
