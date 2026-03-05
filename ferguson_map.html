@@ -54,6 +54,7 @@
 @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 #loader-text{font-size:18px;font-weight:600;margin-bottom:10px}
 #loader-sub{font-size:14px;color:#95a5a6}
+#loader-hint{font-size:12px;color:#cfd8dc;min-height:18px;margin-top:8px}
 #loader-progress{width:300px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin:20px auto 0;overflow:hidden}
 #loader-bar{height:100%;background:#3498db;width:0;transition:width 0.3s}
 .leaflet-popup-content-wrapper{padding:0;border-radius:4px}
@@ -133,6 +134,7 @@
 <div id="loader-spinner"></div>
 <div id="loader-text">Loading Ferguson Housing Map</div>
 <div id="loader-sub">Preparing 8,877 parcels...</div>
+<div id="loader-hint"></div>
 <div id="loader-progress"><div id="loader-bar"></div></div>
 </div>
 </div>
@@ -327,7 +329,19 @@ const fullCoverageLayerIds=['ml','cv','ensemble','risk','value','age','occ','cri
 const loadingLayers={};
 const ensembleSearchEntries=[];
 const ensembleLayerByAddress={};
+const dataCacheVersion='v4';
+const dataCacheName=`ferguson-map-data-${dataCacheVersion}`;
+const loaderPhrases=[
+'Reading parcel geometry...',
+'Analyzing Street View signals...',
+'Running regression-based risk estimates...',
+'Blending statistical and vision scores...',
+'Indexing searchable addresses...',
+'Preparing intervention-ready map layers...'
+];
 let startupCompleted=false;
+let loaderPhraseTimer=null;
+let loaderPhraseIndex=0;
 
 function updateProgress(done,total,label){
 const pct=Math.max(0,Math.min(100,Math.round((done/total)*100)));
@@ -348,20 +362,58 @@ clearTimeout(id);
 }
 }
 
+async function openDataCache(){
+if(!('caches' in window))return null;
+try{
+return await caches.open(dataCacheName);
+}catch(err){
+console.error(err);
+return null;
+}
+}
+
+async function readLayerFromCache(cache,name){
+if(!cache)return null;
+const key=`map_data/${name}.json`;
+const cached=await cache.match(key);
+if(!cached||!cached.ok)return null;
+const json=await cached.json();
+if(!Array.isArray(json))return null;
+return json;
+}
+
+async function writeLayerToCache(cache,name,response){
+if(!cache||!response||!response.ok)return;
+const key=`map_data/${name}.json`;
+try{
+await cache.put(key,response.clone());
+}catch(err){
+console.error(err);
+}
+}
+
 async function loadLayer(name){
 if(data[name])return data[name];
 if(loadingLayers[name])return loadingLayers[name];
 loadingLayers[name]=(async()=>{
 let json;
+const cache=await openDataCache();
+json=await readLayerFromCache(cache,name);
+if(Array.isArray(json)){
+data[name]=json;
+return json;
+}
 try{
 const response=await fetchJsonWithTimeout(`map_data/${name}.json`,{cache:'default'},90000);
 if(!response.ok)throw new Error(`Failed to load ${name}.json (${response.status})`);
+await writeLayerToCache(cache,name,response);
 json=await response.json();
 if(!Array.isArray(json))throw new Error(`Invalid layer payload: ${name}`);
 }catch(primaryErr){
 const bust=Date.now();
 const retry=await fetchJsonWithTimeout(`map_data/${name}.json?v=${bust}`,{cache:'no-store'},120000);
 if(!retry.ok)throw primaryErr;
+await writeLayerToCache(cache,name,retry);
 json=await retry.json();
 if(!Array.isArray(json))throw primaryErr;
 }
@@ -441,9 +493,29 @@ map.removeLayer(layers.confirmedContext);
 }
 }
 
+function startLoaderPhrases(){
+const hint=document.getElementById('loader-hint');
+if(!hint)return;
+loaderPhraseIndex=0;
+hint.textContent=loaderPhrases[loaderPhraseIndex];
+if(loaderPhraseTimer)clearInterval(loaderPhraseTimer);
+loaderPhraseTimer=setInterval(()=>{
+loaderPhraseIndex=(loaderPhraseIndex+1)%loaderPhrases.length;
+hint.textContent=loaderPhrases[loaderPhraseIndex];
+},2200);
+}
+
+function stopLoaderPhrases(){
+if(loaderPhraseTimer){
+clearInterval(loaderPhraseTimer);
+loaderPhraseTimer=null;
+}
+}
+
 function completeStartup(){
 if(startupCompleted)return;
 startupCompleted=true;
+stopLoaderPhrases();
 const loader=document.getElementById('loader');
 if(loader)loader.style.display='none';
 }
@@ -644,6 +716,7 @@ resultsDiv.classList.remove('show');
 }
 });
 
+startLoaderPhrases();
 loadData();
 
 
