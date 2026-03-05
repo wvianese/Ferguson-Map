@@ -508,6 +508,7 @@ if(tip&&!layer.getTooltip())layer.bindTooltip(tip,{sticky:true,className:'proper
 function attachLazyFeatureHandlers(feature,layer){
 layer.on('click',()=>{
 ensureLayerPopupBound(layer);
+if(layer.getPopup())layer.openPopup();
 });
 layer.on('mouseover',()=>{
 ensureLayerTooltipBound(layer);
@@ -683,31 +684,18 @@ selectResult(searchResultsData[0]);
 return;
 }
 searchResultsData=[];
-Object.keys(layers).forEach(layerId=>{
-if(layers[layerId]){
-collectLayerMatches(layers[layerId],input).forEach(r=>{
-const existing=searchResultsData.find(x=>x.address===r.address);
-if(!existing)searchResultsData.push(r);
-});
-}
-});
 
-// Fallback: ensure ensemble data is searchable even if other layers are not yet initialized.
-if(searchResultsData.length===0){
+// Search from a single normalized ensemble index for consistent, fast results.
 try{
 await ensureEnsembleSearchLayers();
-ensembleSearchEntries.forEach(e=>{
-if(e.addressLower.includes(input)){
+for(const e of ensembleSearchEntries){
+if(!e.addressLower.includes(input))continue;
 const layer=ensembleLayerByAddress[e.address];
-if(layer){
-const existing=searchResultsData.find(x=>x.address===e.address);
-if(!existing)searchResultsData.push({address:e.address,layer,color:e.color});
+if(layer)searchResultsData.push({address:e.address,layer,color:e.color});
+if(searchResultsData.length>=10)break;
 }
-}
-});
 }catch(err){
 console.error(err);
-}
 }
 
 searchResultsData.sort((a,b)=>a.address.localeCompare(b.address));
@@ -715,7 +703,8 @@ searchResultsData=searchResultsData.slice(0,10);
 if(searchResultsData.length>0){
 resultsDiv.innerHTML=searchResultsData.map(r=>{
 const addressText=r.address.replace(/<[^>]*>/g,'');
-const regex=new RegExp(`(${input})`,`gi`);
+const escaped=input.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const regex=new RegExp(`(${escaped})`,'gi');
 const highlighted=addressText.replace(regex,`<span class="highlight">$1</span>`);
 return `<div class="search-result-item" onclick="selectResultByAddress('${r.address.replace(/'/g,"\\'")}')"><div class="color-box" style="background:${r.color}"></div><div class="address-text">${highlighted}</div></div>`;
 }).join('');
