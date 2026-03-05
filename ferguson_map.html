@@ -78,6 +78,8 @@
 .group-title{font-size:10px;font-weight:700;color:#7f8c8d;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
 .layer-item{padding:8px 0;cursor:pointer;font-size:13px;color:#2c3e50;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0f0f0}
 .layer-item:last-child{border-bottom:none}
+.layer-item.layer-loading{opacity:.5;pointer-events:none}
+.layer-item.layer-loading::after{content:'Loading...';font-size:10px;color:#7f8c8d;margin-left:8px;white-space:nowrap}
 .layer-label{flex:1;padding-right:8px}
 .layer-label:hover{opacity:0.8}
 .toggle{position:relative;width:36px;height:20px;margin-left:8px}
@@ -513,6 +515,14 @@ if(layer.getTooltip())layer.openTooltip();
 });
 }
 
+function setLayerLoadingState(id,isLoading){
+const checkbox=document.getElementById(id);
+if(!checkbox)return;
+checkbox.disabled=isLoading;
+const item=checkbox.closest('.layer-item');
+if(item)item.classList.toggle('layer-loading',isLoading);
+}
+
 function ensureLayerInstance(id){
 if(layers[id]||!data[id])return;
 layers[id]=L.geoJSON({type:'FeatureCollection',features:data[id]},{
@@ -550,47 +560,38 @@ if(loader)loader.style.display='none';
 
 async function loadData(){
 try{
-const maxBlockingMs=1800;
 let loaded=0;
 const map=window.map_ec7c941fd4cd475eb2c6ef06527bf925;
-let progressTotal=preloadPriority.length;
+const progressTotal=preloadPriority.length;
 
-const openMapNow=async()=>{
-updateProgress(Math.min(loaded,progressTotal),progressTotal,'Opening map and loading layers in background...');
-completeStartup();
-if(data.ensemble){
-await new Promise(resolve=>requestAnimationFrame(resolve));
+layerNames.forEach(id=>{
+if(id!=='ensemble')setLayerLoadingState(id,true);
+});
+
+updateProgress(0,progressTotal,'Loading core layer...');
+await loadLayer('ensemble');
 ensureLayerInstance('ensemble');
+loaded=1;
+updateProgress(loaded,progressTotal,'Opening map...');
+completeStartup();
+await new Promise(resolve=>requestAnimationFrame(resolve));
 if(document.getElementById('ensemble').checked&&layers.ensemble&&!map.hasLayer(layers.ensemble)){
 layers.ensemble.addTo(map);
 }
-}
-};
-
-const ensemblePromise=(async()=>{
-await loadLayer('ensemble');
-loaded+=1;
-updateProgress(Math.min(loaded,progressTotal),progressTotal,`Loaded ${loaded}/${progressTotal} layers`);
-ensureLayerInstance('ensemble');
-if(document.getElementById('ensemble').checked&&startupCompleted&&layers.ensemble&&!map.hasLayer(layers.ensemble)){
-layers.ensemble.addTo(map);
-}
-})();
-
-updateProgress(0,progressTotal,'Loading core layer...');
-await Promise.race([
-ensemblePromise,
-new Promise(resolve=>setTimeout(resolve,maxBlockingMs))
-]);
-await openMapNow();
 
 for(const name of preloadPriority){
 if(name==='ensemble')continue;
-loadLayer(name).then(()=>{
+try{
+await loadLayer(name);
+ensureLayerInstance(name);
+}catch(err){
+console.error(err);
+}finally{
+setLayerLoadingState(name,false);
 loaded+=1;
 updateProgress(Math.min(loaded,progressTotal),progressTotal,`Loaded ${loaded}/${progressTotal} layers`);
-ensureLayerInstance(name);
-}).catch(err=>console.error(err));
+await new Promise(resolve=>setTimeout(resolve,0));
+}
 }
 }catch(err){
 console.error(err);
@@ -603,12 +604,14 @@ completeStartup();
 function toggleFromLabel(id){
 const checkbox=document.getElementById(id);
 if(!checkbox)return;
+if(checkbox.disabled)return;
 checkbox.checked=!checkbox.checked;
 tog(id);
 }
 
 async function tog(id){
 const checkbox=document.getElementById(id);
+if(!checkbox||checkbox.disabled)return;
 const map=window.map_ec7c941fd4cd475eb2c6ef06527bf925;
 
 if(checkbox.checked){
