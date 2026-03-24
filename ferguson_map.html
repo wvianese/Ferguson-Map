@@ -201,6 +201,10 @@
 <div class="layer-label" onclick="toggleFromLabel('confirmed')"><div style='font-weight:600'>City Confirmed Abandoned</div><div style='font-size:10px;color:#7f8c8d'>Official list (138 properties)</div></div>
 <label class="toggle"><input type="checkbox" id="confirmed" onchange="tog('confirmed')"><span class="slider"></span></label>
 </div>
+<div class="layer-item">
+<div class="layer-label" onclick="toggleFromLabel('hotspot')"><div style='font-weight:600'>Vacancy Hotspots</div><div style='font-size:10px;color:#7f8c8d'>Spatial clusters from confirmed list</div></div>
+<label class="toggle"><input type="checkbox" id="hotspot" onchange="tog('hotspot')"><span class="slider"></span></label>
+</div>
 </div>
 <div class="layer-group">
 <div class="group-title">Prediction Models</div>
@@ -246,6 +250,13 @@
 <div class="legend-title">Confirmed Abandoned</div>
 <div class="legend-row"><div class="legend-color" style="background:#8b0000"></div>Official City List (138)</div>
 <div class="legend-row"><div class="legend-color" style="background:#d5dbe1"></div>Other Parcels</div>
+</div>
+<div class="legend-section">
+<div class="legend-title">Vacancy Hotspots</div>
+<div class="legend-row"><div class="legend-color" style="background:#27ae60"></div>0-25 (Low Cluster)</div>
+<div class="legend-row"><div class="legend-color" style="background:#f1c40f"></div>25-50 (Emerging)</div>
+<div class="legend-row"><div class="legend-color" style="background:#d35400"></div>50-75 (Elevated)</div>
+<div class="legend-row"><div class="legend-color" style="background:#8b0000"></div>75-100 (Hotspot)</div>
 </div>
 <div class="legend-section">
 <div class="legend-title">Statistical Model</div>
@@ -326,9 +337,9 @@
 
 const data={};
 const layers={};
-const layerNames=['ml','cv','ensemble','risk','value','age','occ','critical','confirmed'];
-const fullCoverageLayerIds=['ml','cv','ensemble','risk','value','age','occ','critical'];
-const preloadPriority=['ensemble','confirmed','ml','cv','occ','risk','value','age','critical'];
+const layerNames=['ml','cv','ensemble','risk','value','age','occ','critical','confirmed','hotspot'];
+const fullCoverageLayerIds=['ml','cv','ensemble','risk','value','age','occ','critical','hotspot'];
+const preloadPriority=['ensemble','confirmed','hotspot','ml','cv','occ','risk','value','age','critical'];
 const loadingLayers={};
 const ensembleSearchEntries=[];
 const ensembleLayerByAddress={};
