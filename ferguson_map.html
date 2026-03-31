@@ -235,6 +235,10 @@
 <div class="layer-label" onclick="toggleFromLabel('occ')"><div style='font-weight:600'>Occupancy Status</div><div style='font-size:10px;color:#7f8c8d'>Owner-occupied vs rental</div></div>
 <label class="toggle"><input type="checkbox" id="occ" onchange="tog('occ')"><span class="slider"></span></label>
 </div>
+<div class="layer-item">
+<div class="layer-label" onclick="toggleFromLabel('landuse')"><div style='font-weight:600'>Land Use</div><div style='font-size:10px;color:#7f8c8d'>Parcel use from county land-use codes</div></div>
+<label class="toggle"><input type="checkbox" id="landuse" onchange="tog('landuse')"><span class="slider"></span></label>
+</div>
 </div>
 </div>
 </div>
@@ -277,6 +281,19 @@
 <div class="legend-row"><div class="legend-color" style="background:#f1c40f"></div>25-50 (Med)</div>
 <div class="legend-row"><div class="legend-color" style="background:#e67e22"></div>50-75 (High)</div>
 <div class="legend-row"><div class="legend-color" style="background:#e74c3c"></div>75-100 (Crit)</div>
+</div>
+<div class="legend-section">
+<div class="legend-title">Land Use</div>
+<div class="legend-row"><div class="legend-color" style="background:#f1e85b"></div>Single Family</div>
+<div class="legend-row"><div class="legend-color" style="background:#f39c12"></div>Duplex / Townhome</div>
+<div class="legend-row"><div class="legend-color" style="background:#ff8c69"></div>Multi-Family</div>
+<div class="legend-row"><div class="legend-color" style="background:#c0392b"></div>Commercial</div>
+<div class="legend-row"><div class="legend-color" style="background:#8e44ad"></div>Industrial / Utility</div>
+<div class="legend-row"><div class="legend-color" style="background:#2e5aac"></div>Institution / Civic</div>
+<div class="legend-row"><div class="legend-color" style="background:#6ab04c"></div>Park / Open Space</div>
+<div class="legend-row"><div class="legend-color" style="background:#27ae60"></div>Recreation</div>
+<div class="legend-row"><div class="legend-color" style="background:#b8860b"></div>Vacant / Agriculture</div>
+<div class="legend-row"><div class="legend-color" style="background:#95a5a6"></div>Unknown / Other</div>
 </div>
 <div class="legend-section">
 <div class="legend-title">Property Value</div>
@@ -337,9 +354,9 @@
 
 const data={};
 const layers={};
-const layerNames=['ml','cv','ensemble','risk','value','age','occ','critical','confirmed','hotspot'];
-const fullCoverageLayerIds=['ml','cv','ensemble','risk','value','age','occ','critical','hotspot'];
-const preloadPriority=['ensemble','confirmed','hotspot','ml','cv','occ','risk','value','age','critical'];
+const layerNames=['ml','cv','ensemble','risk','value','age','occ','landuse','critical','confirmed','hotspot'];
+const fullCoverageLayerIds=['ml','cv','ensemble','risk','value','age','occ','landuse','critical','hotspot'];
+const preloadPriority=['ensemble','confirmed','hotspot','landuse','ml','cv','occ','risk','value','age','critical'];
 const loadingLayers={};
 const ensembleSearchEntries=[];
 const ensembleLayerByAddress={};
